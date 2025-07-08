@@ -1,0 +1,137 @@
+<?php
+
+namespace App\Filament\Resources;
+
+use App\Filament\Resources\EmployeeResource\Pages;
+use App\Filament\Resources\EmployeeResource\RelationManagers;
+use App\Models\Employee;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+
+class EmployeeResource extends Resource
+{
+    protected static ?string $model = Employee::class;
+
+    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+
+    protected static ?string $modelLabel = 'Empleado';
+    
+    protected static ?string $navigationLabel = 'Mis Empleados';
+
+    public static function form(Form $form): Form
+    {
+        return $form
+            ->schema([
+                Forms\Components\TextInput::make('name')
+                    ->label('Nombre')
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('paternal_last_name')
+                    ->label('Apellido Paterno')
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('maternal_last_name')
+                    ->label('Apellido Materno')
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('address')
+                    ->label('Dirección')
+                    ->maxLength(255)
+                    ->nullable(),
+                Forms\Components\TextInput::make('phone')
+                    ->label('Teléfono')
+                    ->tel()
+                    ->required()
+                    ->maxLength(255),
+                Forms\Components\TextInput::make('active')
+                    ->label('Activo')
+                    ->required()
+                    ->maxLength(255)
+                    ->default(true),
+            ]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('name')
+                    ->label('Nombre')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('paternal_last_name')
+                    ->label('Apellido Paterno')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('maternal_last_name')
+                    ->label('Apellido Materno')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('address')
+                    ->label('Dirección')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('phone')
+                    ->label('Teléfono')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('active')
+                    ->label('Activo')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('deleted_at')
+                    ->label('Eliminado')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Creado')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Actualizado')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->filters([
+                Tables\Filters\TrashedFilter::make(),
+            ])
+            ->actions([
+                Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\ForceDeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make(),
+                ]),
+            ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            //
+        ];
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListEmployees::route('/'),
+            'create' => Pages\CreateEmployee::route('/create'),
+            'view' => Pages\ViewEmployee::route('/{record}'),
+            'edit' => Pages\EditEmployee::route('/{record}/edit'),
+        ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
+    }
+}

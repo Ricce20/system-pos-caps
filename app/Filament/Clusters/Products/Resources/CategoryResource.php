@@ -1,10 +1,11 @@
 <?php
 
-namespace App\Filament\Resources;
+namespace App\Filament\Clusters\Products\Resources;
 
-use App\Filament\Resources\EmployeeResource\Pages;
-use App\Filament\Resources\EmployeeResource\RelationManagers;
-use App\Models\Employee;
+use App\Filament\Clusters\Products;
+use App\Filament\Clusters\Products\Resources\CategoryResource\Pages;
+use App\Filament\Clusters\Products\Resources\CategoryResource\RelationManagers;
+use App\Models\Category;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -13,17 +14,17 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class EmployeeResource extends Resource
+class CategoryResource extends Resource
 {
-    protected static ?string $model = Employee::class;
+    protected static ?string $model = Category::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    protected static ?string $modelLabel = 'Empleado';
-    
-    protected static ?string $navigationLabel = 'Mis Empleados';
+    protected static ?string $cluster = Products::class;
 
-    protected static ?string $navigationGroup = 'Personal';
+    protected static ?string $modelLabel = 'Categoria';
+    
+    protected static ?string $navigationLabel = 'Categorias';
 
 
     public static function form(Form $form): Form
@@ -32,30 +33,13 @@ class EmployeeResource extends Resource
             ->schema([
                 Forms\Components\TextInput::make('name')
                     ->label('Nombre')
+                    ->placeholder('Ingrese el nombre de la categoría')
                     ->required()
+                    ->unique(ignoreRecord: true)
                     ->maxLength(255),
-                Forms\Components\TextInput::make('paternal_last_name')
-                    ->label('Apellido Paterno')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('maternal_last_name')
-                    ->label('Apellido Materno')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('address')
-                    ->label('Dirección')
-                    ->maxLength(255)
-                    ->nullable(),
-                Forms\Components\TextInput::make('phone')
-                    ->label('Teléfono')
-                    ->tel()
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('active')
-                    ->label('Activo')
-                    ->required()
-                    ->maxLength(255)
-                    ->default(true),
+                Forms\Components\Toggle::make('is_available')
+                    ->label('Disponible')
+                    ->required(),
             ]);
     }
 
@@ -66,21 +50,9 @@ class EmployeeResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nombre')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('paternal_last_name')
-                    ->label('Apellido Paterno')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('maternal_last_name')
-                    ->label('Apellido Materno')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('address')
-                    ->label('Dirección')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('phone')
-                    ->label('Teléfono')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('active')
-                    ->label('Activo')
-                    ->searchable(),
+                Tables\Columns\IconColumn::make('is_available')
+                    ->label('Disponible')
+                    ->boolean(),
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Eliminado')
                     ->dateTime()
@@ -123,10 +95,10 @@ class EmployeeResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListEmployees::route('/'),
-            'create' => Pages\CreateEmployee::route('/create'),
-            'view' => Pages\ViewEmployee::route('/{record}'),
-            'edit' => Pages\EditEmployee::route('/{record}/edit'),
+            'index' => Pages\ListCategories::route('/'),
+            'create' => Pages\CreateCategory::route('/create'),
+            'view' => Pages\ViewCategory::route('/{record}'),
+            'edit' => Pages\EditCategory::route('/{record}/edit'),
         ];
     }
 

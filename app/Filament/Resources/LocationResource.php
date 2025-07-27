@@ -19,6 +19,10 @@ class LocationResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    protected static ?string $modelLabel = 'Establecimiento';
+    
+    protected static ?string $navigationLabel = 'Establecimientos';
+
     public static function form(Form $form): Form
     {
         return $form
@@ -35,6 +39,13 @@ class LocationResource extends Resource
                 ->label('Teléfono')
                 ->required()
                 ->maxLength(255),
+            Forms\Components\Select::make('warehouse_id')
+                ->label('Almacen a utilizar')
+                ->native(false)
+                ->relationship('warehouse','name')
+                ->preload()
+                ->required()
+                ->unique(),
             Forms\Components\Toggle::make('active')
                 ->label('Activo')
                 ->required(),
@@ -55,6 +66,10 @@ class LocationResource extends Resource
                 ->sortable(),
             Tables\Columns\TextColumn::make('phone')
                 ->label('Teléfono')
+                ->searchable()
+                ->sortable(),
+            Tables\Columns\TextColumn::make('warehouse.name')
+                ->label('Almacen asignado')
                 ->searchable()
                 ->sortable(),
             Tables\Columns\IconColumn::make('active')

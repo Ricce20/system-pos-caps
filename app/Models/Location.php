@@ -14,6 +14,11 @@ class Location extends Model
         'address',
         'phone',
         'active',
+        'warehouse_id'
     ];
+
+    public function warehouse(){
+        return $this->belongsTo(Warehouse::class);
+    }
 
 }

@@ -1,30 +1,32 @@
 <?php
 
-namespace App\Filament\Resources;
+namespace App\Filament\Clusters\Suppliers\Resources;
 
-use App\Filament\Resources\EmployeeResource\Pages;
-use App\Filament\Resources\EmployeeResource\RelationManagers;
-use App\Models\Employee;
+use App\Filament\Clusters\Suppliers;
+use App\Filament\Clusters\Suppliers\Resources\SupplierResource\Pages;
+use App\Filament\Clusters\Suppliers\Resources\SupplierResource\RelationManagers;
+use App\Filament\Clusters\Suppliers\Resources\SupplierResource\RelationManagers\SupplierItemRelationManager;
+use App\Models\Supplier;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class EmployeeResource extends Resource
+class SupplierResource extends Resource
 {
-    protected static ?string $model = Employee::class;
+    protected static ?string $model = Supplier::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    protected static ?string $modelLabel = 'Empleado';
+    protected static ?string $cluster = Suppliers::class;
+
+    protected static ?string $modelLabel = 'Proveedor';
     
-    protected static ?string $navigationLabel = 'Mis Empleados';
-
-    protected static ?string $navigationGroup = 'Personal';
-
+    protected static ?string $pluralModelLabel = 'Proveedores';
 
     public static function form(Form $form): Form
     {
@@ -34,28 +36,25 @@ class EmployeeResource extends Resource
                     ->label('Nombre')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('paternal_last_name')
-                    ->label('Apellido Paterno')
-                    ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('maternal_last_name')
-                    ->label('Apellido Materno')
-                    ->required()
-                    ->maxLength(255),
                 Forms\Components\TextInput::make('address')
                     ->label('Dirección')
                     ->maxLength(255)
-                    ->nullable(),
+                    ->default(null),
                 Forms\Components\TextInput::make('phone')
                     ->label('Teléfono')
                     ->tel()
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('active')
-                    ->label('Activo')
+                Forms\Components\Select::make('brand_id')
+                    ->label('Marca')
                     ->required()
-                    ->maxLength(255)
-                    ->default(true),
+                    ->native('false')
+                    ->relationship('brand','name')
+                    ->searchable()
+                    ->preload(),
+                Forms\Components\Toggle::make('is_available')
+                    ->label('Disponible')
+                    ->required(),
             ]);
     }
 
@@ -66,39 +65,38 @@ class EmployeeResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nombre')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('paternal_last_name')
-                    ->label('Apellido Paterno')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('maternal_last_name')
-                    ->label('Apellido Materno')
-                    ->searchable(),
                 Tables\Columns\TextColumn::make('address')
                     ->label('Dirección')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('phone')
                     ->label('Teléfono')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('active')
-                    ->label('Activo')
-                    ->searchable(),
+                Tables\Columns\TextColumn::make('brand.name')
+                    ->label('Marca')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\IconColumn::make('is_available')
+                    ->label('Disponible')
+                    ->boolean(),
                 Tables\Columns\TextColumn::make('deleted_at')
-                    ->label('Eliminado')
+                    ->label('Eliminado el')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Creado')
+                    ->label('Creado el')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
-                    ->label('Actualizado')
+                    ->label('Actualizado el')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\TrashedFilter::make(),
+                Tables\Filters\TrashedFilter::make()
+                    ->label('Eliminados'),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
@@ -116,17 +114,17 @@ class EmployeeResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\SupplierItemRelationManager::class
         ];
     }
 
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListEmployees::route('/'),
-            'create' => Pages\CreateEmployee::route('/create'),
-            'view' => Pages\ViewEmployee::route('/{record}'),
-            'edit' => Pages\EditEmployee::route('/{record}/edit'),
+            'index' => Pages\ListSuppliers::route('/'),
+            'create' => Pages\CreateSupplier::route('/create'),
+            'view' => Pages\ViewSupplier::route('/{record}'),
+            'edit' => Pages\EditSupplier::route('/{record}/edit'),
         ];
     }
 

@@ -21,8 +21,14 @@ class WarehouseResource extends Resource
 
 
     protected static ?string $modelLabel = 'Almacen';
+
+    protected static ?string $pluralLabel = 'Almacenes';
+
     
     protected static ?string $navigationLabel = 'Almacenes';
+
+    protected static ?string $navigationGroup = 'Almacenamiento';
+
 
 
     public static function form(Form $form): Form
@@ -42,10 +48,14 @@ class WarehouseResource extends Resource
                     ->placeholder('Ingrese la ubicación del almacén'),
                 Forms\Components\Toggle::make('active')
                     ->label('Activo')
+                    ->onColor('success')
+                    ->offColor('danger')
                     ->default(true)
                     ->helperText('Indica si el almacén está activo o no'),
                 Forms\Components\Toggle::make('is_primary')
                     ->label('Principal')
+                    ->onColor('success')
+                    ->offColor('danger')
                     ->default(true)
                     ->unique(ignoreRecord: true)
                     ->helperText('Indica si el almacén es el pricipal para recibir mercancia'),
@@ -57,8 +67,10 @@ class WarehouseResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
+                    ->label('Nombre')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('location')
+                    ->label('Ubicacion')
                     ->searchable(),
                 Tables\Columns\IconColumn::make('active')
                     ->boolean(),
@@ -66,24 +78,38 @@ class WarehouseResource extends Resource
                     ->label('Almacén pricipal')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('deleted_at')
+                    ->label('Eliminado')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')
+                    ->label('Creado')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Actualizado')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\TrashedFilter::make(),
+                Tables\Filters\TrashedFilter::make()
+                    ->native(false),
+                Tables\Filters\SelectFilter::make('activos')
+                    ->options([
+                        true => 'Activos',
+                        false => 'No Activos'
+                    ])->attribute('active')
+                    ->native(false),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make(),
+                    Tables\Actions\EditAction::make(),
+                ])
+                ->button()
+                ->label('Acciones')
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -91,7 +117,11 @@ class WarehouseResource extends Resource
                     Tables\Actions\ForceDeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->modifyQueryUsing(fn (Builder $query) => 
+                $query->latest() // Equivale a ->orderBy('created_at', 'desc')
+            )
+            ->deferLoading();
     }
 
     public static function getRelations(): array

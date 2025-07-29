@@ -79,10 +79,12 @@ class SupplierItemRelationManager extends RelationManager
                     ->sortable(),
                 Tables\Columns\TextColumn::make('purchase_price')
                     ->label('Precio de Compra')
+                    ->prefix('$')
                     ->money('MNX')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('sale_price')
                     ->label('Precio de Venta')
+                    ->prefix('$')
                     ->money('MNX')
                     ->sortable(),
                 Tables\Columns\IconColumn::make('is_available')
@@ -95,7 +97,14 @@ class SupplierItemRelationManager extends RelationManager
                     ->sortable(),
             ])
             ->filters([
-                //
+                Tables\Filters\TrashedFilter::make()
+                    ->native(false),
+                Tables\Filters\SelectFilter::make('activos')
+                    ->options([
+                        true => 'Disponibles',
+                        false => 'No Disponibles'
+                    ])->attribute('is_available')
+                    ->native(false)
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()
@@ -103,15 +112,29 @@ class SupplierItemRelationManager extends RelationManager
 
             ])
             ->actions([
-                Tables\Actions\EditAction::make()
-                    ->label('Editar'),
-                Tables\Actions\DeleteAction::make()
-                    ->label('Eliminar'),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make(),
+                    Tables\Actions\EditAction::make(),
+                ])
+                ->button()
+                ->label('Acciones')
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
+            ])
+            ->modifyQueryUsing(fn (Builder $query) => 
+                $query->latest() // Equivale a ->orderBy('created_at', 'desc')
+            )
+            ->deferLoading();
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
             ]);
     }
 }

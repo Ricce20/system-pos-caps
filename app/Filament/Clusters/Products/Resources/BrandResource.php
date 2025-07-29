@@ -38,6 +38,8 @@ class BrandResource extends Resource
                     ->unique(ignoreRecord: true),
                 Forms\Components\Toggle::make('is_available')
                     ->label('Disponible')
+                    ->onColor('success')
+                    ->offColor('danger')
                     ->required(),
             ]);
     }
@@ -45,9 +47,11 @@ class BrandResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->heading('Marcas')
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nombre')
+                    ->sortable()
                     ->searchable(),
                 Tables\Columns\IconColumn::make('is_available')
                     ->label('Disponible')
@@ -69,11 +73,23 @@ class BrandResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\TrashedFilter::make(),
+                Tables\Filters\TrashedFilter::make()
+                    ->native(false),
+                Tables\Filters\SelectFilter::make('activos')
+                    ->options([
+                        true => 'Disponibles',
+                        false => 'No Disponibles'
+                    ])->attribute('is_available')
+                    ->native(false)
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make(),
+                    Tables\Actions\EditAction::make(),
+                ])
+                ->button()
+                ->label('Acciones')
+                
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -81,7 +97,11 @@ class BrandResource extends Resource
                     Tables\Actions\ForceDeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->modifyQueryUsing(fn (Builder $query) => 
+                $query->latest() // Equivale a ->orderBy('created_at', 'desc')
+            )
+            ->deferLoading();
     }
 
     public static function getRelations(): array

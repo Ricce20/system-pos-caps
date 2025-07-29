@@ -22,6 +22,7 @@ class WarehouseItemRelationManager extends RelationManager
         return $form
             ->schema([
                 Forms\Components\Select::make('item_id')
+                    ->label('Producto')
                     ->relationship(
                         'item','product_id'
                     )
@@ -33,10 +34,14 @@ class WarehouseItemRelationManager extends RelationManager
                         return $rule->where('warehouse_id',$this->getOwnerRecord()->getKey())->where('item_id',$get('item_id'));
                     }),
                 Forms\Components\TextInput::make('stock')
+                    ->label('Stock(Cantidad)')
                     ->required()
-                    ->numeric(),
+                    ->numeric()
+                    ->minValue(1),
                 Forms\Components\Toggle::make('is_available')
                     ->label('Disponible')
+                    ->onColor('success')
+                    ->offColor('danger')
                     ->required()
             ]);
     }
@@ -44,6 +49,7 @@ class WarehouseItemRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
+            ->heading('Productos en Almacen')
             ->recordTitleAttribute('warehouse_id')
             ->columns([
                 Tables\Columns\TextColumn::make('item.product.name')
@@ -55,21 +61,44 @@ class WarehouseItemRelationManager extends RelationManager
                 Tables\Columns\IconColumn::make('is_available')
                     ->label('Disponible')
                     ->boolean(),
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Actualizado')
+                    ->dateTime()
+                    ->sortable()
             ])
             ->filters([
-                //
+                Tables\Filters\TrashedFilter::make()
+                    ->native(false),
+                Tables\Filters\SelectFilter::make('activos')
+                    ->options([
+                        true => 'Disponibles',
+                        false => 'No Disponibles'
+                    ])->attribute('is_available')
+                    ->native(false)
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make(),
+                Tables\Actions\CreateAction::make()
+                    ->label('Agregar producto'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make(),
+                    Tables\Actions\EditAction::make(),
+                ])
+                ->button()
+                ->label('Acciones')
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->modifyQueryUsing(fn (Builder $query) => 
+                $query->latest() // Equivale a ->orderBy('created_at', 'desc')
+            )
+            ->deferLoading()->modifyQueryUsing(fn (Builder $query) => 
+                $query->latest() // Equivale a ->orderBy('created_at', 'desc')
+            )
+            ->deferLoading();
     }
 }

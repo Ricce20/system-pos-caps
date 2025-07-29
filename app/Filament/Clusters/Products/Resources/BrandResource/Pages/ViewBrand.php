@@ -13,7 +13,13 @@ class ViewBrand extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make(),
+            Actions\EditAction::make()
+                ->label('Editar'),
         ];
+    }
+
+    public function getTitle(): string
+    {
+        return "Vista Marcar";
     }
 }

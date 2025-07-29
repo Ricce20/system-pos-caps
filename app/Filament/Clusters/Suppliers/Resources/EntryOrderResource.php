@@ -28,26 +28,26 @@ class EntryOrderResource extends Resource
 
     protected static ?string $cluster = Suppliers::class;
 
+    protected static ?string $modelLabel = 'Entrada Compra';
+    
+    protected static ?string $navigationLabel = 'Entradas de Compra';
+
+
     public static function form(Form $form): Form
     {
         return $form
         ->schema([
-            // Campos de la orden de compra
-            // Forms\Components\DateTimePicker::make('fecha_orden')
-            //     ->label('Fecha de Orden')
-            //     ->required()
-            //     ->default(Carbon::now('America/Mexico_City')->format('Y-m-d H:i:s'))
-            //     ->displayFormat('Y-m-d h:i A') // Formato de 12 horas con AM/PM
-            //     ->readOnly(),
-
             Forms\Components\Select::make('supplier_id')
                 ->label('Proveedor')
                 ->placeholder('Selecciona a un proveedor')
-                ->relationship('supplier','name')
+                ->relationship('supplier','name', function ($query) {
+                    return $query->where('is_available', true)->whereNull('deleted_at');
+                })
+                ->loadingMessage('Cargando...')
+                ->optionsLimit(20)
                 ->required()
                 ->searchable()
                 ->native(false)
-                // ->options(Supplier::pluck('name', 'id'))
                 ->preload()
                 ->reactive() // necesario para usarlo dentro del Repeater
                 ->afterStateUpdated(function ($state, callable $set) {
@@ -86,6 +86,8 @@ class EntryOrderResource extends Resource
                             // Traer los items con sus relaciones
                             return Item::with(['product', 'size'])
                                 ->whereIn('id', $itemIds)
+                                ->where('is_available', true)
+                                ->whereNull('deleted_at')
                                 ->get()
                                 ->mapWithKeys(function ($item) {
                                     $label = "{$item->product->name} - {$item->size->name}";
@@ -95,6 +97,8 @@ class EntryOrderResource extends Resource
                         ->preload()
                         ->native(false)
                         ->searchable()
+                        ->loadingMessage('Cargando...')
+                        ->optionsLimit(20)
                         ->required()
                         ->reactive()
                         ->afterStateUpdated(function ($state, callable $set, callable $get) {
@@ -165,6 +169,7 @@ class EntryOrderResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->heading('Registro de Compras')
             ->columns([
                 Tables\Columns\TextColumn::make('supplier.name')
                     ->label('Proovedor'),
@@ -180,29 +185,37 @@ class EntryOrderResource extends Resource
                     ->prefix('$')
                     ->label('Total de compra')
                     ->alignCenter(),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                // Tables\Columns\TextColumn::make('created_at')
+                //     ->dateTime()
+                //     ->sortable()
+                //     ->toggleable(isToggledHiddenByDefault: true),
+                // Tables\Columns\TextColumn::make('updated_at')
+                //     ->dateTime()
+                //     ->sortable()
+                //     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\TrashedFilter::make(),
+                Tables\Filters\TrashedFilter::make()
+                    ->native(false),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make(),
+                ])
+                ->button()
+                ->label('Acciones')
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
-                ]),
-            ]);
+            ->modifyQueryUsing(fn (Builder $query) => 
+                $query->latest() // Equivale a ->orderBy('created_at', 'desc')
+            )
+            ->deferLoading();
+            // ->bulkActions([
+            //     Tables\Actions\BulkActionGroup::make([
+            //         Tables\Actions\DeleteBulkAction::make(),
+            //         Tables\Actions\ForceDeleteBulkAction::make(),
+            //         Tables\Actions\RestoreBulkAction::make(),
+            //     ]),
+            // ]);
     }
 
     public static function getRelations(): array

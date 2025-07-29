@@ -16,6 +16,9 @@ class EntryOrderDetailRelationManager extends RelationManager
 {
     protected static string $relationship = 'EntryOrderDetail';
 
+    protected static ?string $title = 'Detalles de Compra';
+
+
     public function form(Form $form): Form
     {
         return $form

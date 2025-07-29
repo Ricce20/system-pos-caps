@@ -28,7 +28,15 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->colors([
-                'primary' => Color::Amber,
+                // #AA4837 - ROJO
+                // #917C6D - Cafe claro
+                // #C5AD9B - Beige
+                // #E8D6C7 - Hueso
+                // #2E2626 - Cafe oscuro
+
+                'gray' => '#2E2626', //fondo
+                'primary' => '#E8D6C7',
+
             ])
             ->sidebarCollapsibleOnDesktop()
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')

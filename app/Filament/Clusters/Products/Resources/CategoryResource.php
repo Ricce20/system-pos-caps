@@ -39,6 +39,8 @@ class CategoryResource extends Resource
                     ->maxLength(255),
                 Forms\Components\Toggle::make('is_available')
                     ->label('Disponible')
+                    ->onColor('success')
+                    ->offColor('danger')
                     ->required(),
             ]);
     }
@@ -46,6 +48,7 @@ class CategoryResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->heading('Categorias')
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nombre')
@@ -70,11 +73,22 @@ class CategoryResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\TrashedFilter::make(),
+                Tables\Filters\TrashedFilter::make()
+                    ->native(false),
+                Tables\Filters\SelectFilter::make('activos')
+                    ->options([
+                        true => 'Disponibles',
+                        false => 'No Disponibles'
+                    ])->attribute('is_available')
+                    ->native(false)
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make(),
+                    Tables\Actions\EditAction::make(),
+                ])
+                ->button()
+                ->label('Acciones')
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -82,7 +96,11 @@ class CategoryResource extends Resource
                     Tables\Actions\ForceDeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->modifyQueryUsing(fn (Builder $query) => 
+                $query->latest() // Equivale a ->orderBy('created_at', 'desc')
+            )
+            ->deferLoading();
     }
 
     public static function getRelations(): array

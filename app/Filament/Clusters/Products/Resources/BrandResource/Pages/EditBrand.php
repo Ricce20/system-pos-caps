@@ -13,10 +13,30 @@ class EditBrand extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\ViewAction::make(),
-            Actions\DeleteAction::make(),
-            Actions\ForceDeleteAction::make(),
-            Actions\RestoreAction::make(),
+            Actions\ViewAction::make()
+                ->label('Ver'),
+            Actions\DeleteAction::make()
+                ->label('Eliminar'),
+            Actions\ForceDeleteAction::make()
+                ->label('Forzar Eliminacion'),
+            Actions\RestoreAction::make()
+                ->label('Restaurar'),
         ];
+    }
+
+    protected function getFormActions(): array
+    {
+        return [
+            $this->getSaveFormAction()
+                ->label('Guardar'),
+            $this->getCancelFormAction()
+                ->label('Cancelar'),
+        ];
+    }
+
+
+    public function getTitle(): string
+    {
+        return "Editar Marcar";
     }
 }

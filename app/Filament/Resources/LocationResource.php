@@ -29,6 +29,7 @@ class LocationResource extends Resource
             ->schema([
             Forms\Components\TextInput::make('name')
                 ->label('Nombre')
+                ->unique()
                 ->required()
                 ->maxLength(255),
             Forms\Components\TextInput::make('address')
@@ -37,17 +38,25 @@ class LocationResource extends Resource
                 ->maxLength(255),
             Forms\Components\TextInput::make('phone')
                 ->label('Teléfono')
+                ->unique()
                 ->required()
-                ->maxLength(255),
+                ->maxLength(10),
             Forms\Components\Select::make('warehouse_id')
                 ->label('Almacen a utilizar')
                 ->native(false)
-                ->relationship('warehouse','name')
+                ->relationship('warehouse','name', function ($query) {
+                    return $query->where('active', true)->whereNull('deleted_at');
+                })
+                ->searchable()
                 ->preload()
+                ->loadingMessage('Cargando...')
+                ->optionsLimit(20)
                 ->required()
                 ->unique(),
             Forms\Components\Toggle::make('active')
                 ->label('Activo')
+                ->onColor('success')
+                ->offColor('danger')
                 ->required(),
             ]);
     }
@@ -55,6 +64,7 @@ class LocationResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->heading('Establecimientos')
             ->columns([
             Tables\Columns\TextColumn::make('name')
                 ->label('Nombre')
@@ -93,11 +103,22 @@ class LocationResource extends Resource
                 ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\TrashedFilter::make(),
+                Tables\Filters\TrashedFilter::make()
+                ->native(false),
+                Tables\Filters\SelectFilter::make('activos')
+                    ->options([
+                        true => 'Disponibles',
+                        false => 'No Disponibles'
+                    ])->attribute('is_available')
+                    ->native(false),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make(),
+                    Tables\Actions\EditAction::make(),
+                ])
+                ->button()
+                ->label('Acciones')
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -105,7 +126,11 @@ class LocationResource extends Resource
                     Tables\Actions\ForceDeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->modifyQueryUsing(fn (Builder $query) => 
+                $query->latest() // Equivale a ->orderBy('created_at', 'desc')
+            )
+            ->deferLoading();
     }
 
     public static function getRelations(): array

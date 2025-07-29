@@ -34,6 +34,7 @@ class SupplierResource extends Resource
             ->schema([
                 Forms\Components\TextInput::make('name')
                     ->label('Nombre')
+                    ->unique()
                     ->required()
                     ->maxLength(255),
                 Forms\Components\TextInput::make('address')
@@ -44,16 +45,23 @@ class SupplierResource extends Resource
                     ->label('Teléfono')
                     ->tel()
                     ->required()
+                    ->unique()
                     ->maxLength(255),
                 Forms\Components\Select::make('brand_id')
                     ->label('Marca')
                     ->required()
                     ->native('false')
-                    ->relationship('brand','name')
+                    ->relationship('brand','name', function ($query) {
+                        return $query->where('is_available', true)->whereNull('deleted_at');
+                    })
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->loadingMessage('Cargando...')
+                    ->optionsLimit(20),
                 Forms\Components\Toggle::make('is_available')
                     ->label('Disponible')
+                    ->onColor('success')
+                    ->offColor('danger')
                     ->required(),
             ]);
     }
@@ -96,11 +104,21 @@ class SupplierResource extends Resource
             ])
             ->filters([
                 Tables\Filters\TrashedFilter::make()
-                    ->label('Eliminados'),
+                    ->native(false),
+                Tables\Filters\SelectFilter::make('activos')
+                    ->options([
+                        true => 'Disponibles',
+                        false => 'No Disponibles'
+                    ])->attribute('is_available')
+                    ->native(false)
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make(),
+                    Tables\Actions\EditAction::make(),
+                ])
+                ->button()
+                ->label('Acciones')
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -108,7 +126,11 @@ class SupplierResource extends Resource
                     Tables\Actions\ForceDeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->modifyQueryUsing(fn (Builder $query) => 
+                $query->latest() // Equivale a ->orderBy('created_at', 'desc')
+            )
+            ->deferLoading();
     }
 
     public static function getRelations(): array

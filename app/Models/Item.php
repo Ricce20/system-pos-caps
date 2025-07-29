@@ -15,6 +15,7 @@ class Item extends Model
         // 'price',
         'qr',
         'barcode',
+        'code',
         'is_available'
     ];
     // Relación con Product

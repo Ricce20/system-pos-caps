@@ -11,6 +11,7 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -37,11 +38,13 @@ class ProductResource extends Resource
                     ->required()
                     ->unique(ignoreRecord: true)
                     ->maxLength(255),
+
                 Forms\Components\TextInput::make('description')
                     ->label('Descripción')
                     ->placeholder('Ingrese una descripción (opcional)')
                     ->maxLength(255)
                     ->default(null),
+
                 Forms\Components\Select::make('brand_id')
                     ->label('Marca')
                     ->placeholder('Seleccione una marca')
@@ -50,7 +53,11 @@ class ProductResource extends Resource
                     })
                     ->searchable()
                     ->preload()
-                    ->required(),
+                    ->required()
+                    ->native(false)
+                    ->loadingMessage('Cargando...')
+                    ->optionsLimit(20),
+
                 Forms\Components\Select::make('model_cap_id')
                     ->label('Modelo')
                     ->placeholder('Seleccione un modelo')
@@ -59,18 +66,28 @@ class ProductResource extends Resource
                     })
                     ->searchable()
                     ->preload()
-                    ->required(),
+                    ->required()
+                    ->native(false)
+                    ->loadingMessage('Cargando...')
+                    ->optionsLimit(20),
+
                 Forms\Components\Select::make('category_id')
                     ->label('Categoría')
                     ->placeholder('Seleccione una categoría')
                     ->relationship('category', 'name', function ($query) {
-                        return $query->whereNull('deleted_at');
+                        return $query->where('is_available', true)->whereNull('deleted_at');
                     })
                     ->searchable()
                     ->preload()
-                    ->required(),
+                    ->required()
+                    ->native(false)
+                    ->loadingMessage('Cargando...')
+                    ->optionsLimit(20),
+
                 Forms\Components\Toggle::make('is_available')
                     ->label('Disponible')
+                    ->onColor('success')
+                    ->offColor('danger')
                     ->required(),
                 Forms\Components\FileUpload::make('image_1')
                     ->label('Imagen 1')
@@ -97,13 +114,18 @@ class ProductResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->heading('Productos')
             ->columns([
                 Tables\Columns\TextColumn::make('name')
-                    ->label('Nombre')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('description')
-                    ->label('Descripción')
-                    ->searchable(),
+                    ->label('Nombre'),
+                //     ->searchable(),
+                // Tables\Columns\TextColumn::make('description')
+                //     ->label('Descripción')
+                //     ->searchable(),
+                Tables\Columns\TextColumn::make('brand.name')
+                    ->label('Marca'),
+                Tables\Columns\TextColumn::make('modelCap.name')
+                    ->label('Modelo'),
                 Tables\Columns\IconColumn::make('is_available')
                     ->label('Disponible')
                     ->alignCenter()
@@ -130,7 +152,12 @@ class ProductResource extends Resource
             ])
             ->filters([
                 Tables\Filters\TrashedFilter::make()
-                    ->label('Registros eliminados')
+                    ->native(false),
+                Tables\Filters\SelectFilter::make('activos')
+                    ->options([
+                        true => 'Disponibles',
+                        false => 'No Disponibles'
+                    ])->attribute('is_available')
                     ->native(false),
                 Tables\Filters\SelectFilter::make('categoria')
                     ->native(false)
@@ -141,18 +168,26 @@ class ProductResource extends Resource
                 Tables\Filters\SelectFilter::make('modelo')
                     ->native(false)
                     ->relationship('modelCap', 'name', fn (Builder $query) => $query->withTrashed())
-            ])
+            ], layout: FiltersLayout::Modal)
             ->actions([
-                Tables\Actions\ViewAction::make()->label('Ver'),
-                Tables\Actions\EditAction::make()->label('Editar'),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make(),
+                    Tables\Actions\EditAction::make(),
+                ])
+                ->button()
+                ->label('Acciones')
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make()->label('Eliminar'),
-                    Tables\Actions\ForceDeleteBulkAction::make()->label('Forzar Eliminacion'),
-                    Tables\Actions\RestoreBulkAction::make()->label('Restaurar'),
-                ])->label('Acciones masivas'),
-            ]);
+                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\ForceDeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make(),
+                ]),
+            ])
+            ->modifyQueryUsing(fn (Builder $query) => 
+                $query->latest() // Equivale a ->orderBy('created_at', 'desc')
+            )
+            ->deferLoading();
     }
 
     public static function getRelations(): array

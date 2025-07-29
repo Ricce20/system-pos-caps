@@ -18,6 +18,9 @@ class ItemRelationManager extends RelationManager
 {
     protected static string $relationship = 'Item';
 
+    protected static ?string $title = 'Producto Tallas';
+
+
     public function form(Form $form): Form
     {
         return $form
@@ -66,6 +69,7 @@ class ItemRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
+            ->heading('Producto por Tallas')
             ->recordTitleAttribute('product_id')
             ->columns([
                 Tables\Columns\TextColumn::make('size.name')
@@ -77,22 +81,52 @@ class ItemRelationManager extends RelationManager
                 //     ->prefix('$'),
                 Tables\Columns\TextColumn::make('barcode')
                     ->label('Código de barra')
+                    ->searchable()
                     ->sortable(),
+                Tables\Columns\IconColumn::make('is_available')
+                    ->label('Disponible')
+                    ->boolean()
             ])
             ->filters([
-                //
+                Tables\Filters\TrashedFilter::make()
+                    ->native(false),
+                Tables\Filters\SelectFilter::make('activos')
+                    ->options([
+                        true => 'Disponibles',
+                        false => 'No Disponibles'
+                    ])->attribute('is_available')
+                    ->native(false)
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make(),
+                Tables\Actions\CreateAction::make()
+                    ->label('Registrar nueva Talla'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make(),
+                    Tables\Actions\EditAction::make(),
+                ])
+                ->button()
+                ->label('Acciones')
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\ForceDeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make(),
                 ]),
+            ])
+            ->modifyQueryUsing(fn (Builder $query) => 
+                $query->latest() // Equivale a ->orderBy('created_at', 'desc')
+            )
+            ->deferLoading();
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
             ]);
     }
 }

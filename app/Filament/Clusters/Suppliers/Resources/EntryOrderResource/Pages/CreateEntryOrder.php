@@ -6,6 +6,7 @@ use App\Filament\Clusters\Suppliers\Resources\EntryOrderResource;
 use App\Models\EntryOrder;
 use App\Models\Warehouse;
 use Filament\Actions;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,7 @@ class CreateEntryOrder extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
+        // dd($data);
         // Si falta la fecha de la orden, asignar la fecha actual
         if (!isset($data['fecha_orden'])) {
             $data['fecha_orden'] = now()->format('Y-m-d H:i:s');
@@ -27,6 +29,20 @@ class CreateEntryOrder extends CreateRecord
         }
         
         return $data;
+    }
+
+    protected function beforeCreate(): void
+    {
+        if (!Warehouse::where('is_primary',true)->exists()) {
+            Notification::make()
+                ->warning()
+                ->title('Almacen no seleccionado')
+                ->body('Seleccione un almacen para recibir la entraga del stock.')
+                ->persistent()
+                ->send();
+        
+            $this->halt();
+        }
     }
 
     protected function handleRecordCreation(array $data): Model
@@ -72,6 +88,7 @@ class CreateEntryOrder extends CreateRecord
                         'item_id' => $item['item_id'],
                         'warehouse_id' => $warehouse->id,
                         'stock' => $item['quantity'],
+                        'is_available' => true,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);

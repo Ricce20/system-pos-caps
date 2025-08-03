@@ -27,6 +27,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->profile(isSimple:false)
             ->colors([
                 // #AA4837 - ROJO
                 // #917C6D - Cafe claro

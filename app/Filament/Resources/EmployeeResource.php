@@ -31,37 +31,47 @@ class EmployeeResource extends Resource
         return $form
             ->schema([
                 Forms\Components\TextInput::make('name')
+                    ->placeholder('Nombre del Empleado')
                     ->label('Nombre')
                     ->required()
                     ->maxLength(255),
                 Forms\Components\TextInput::make('paternal_last_name')
                     ->label('Apellido Paterno')
+                    ->placeholder('Primer Apellido')
                     ->required()
                     ->maxLength(255),
                 Forms\Components\TextInput::make('maternal_last_name')
                     ->label('Apellido Materno')
+                    ->placeholder('Primer Segundo')
                     ->required()
                     ->maxLength(255),
                 Forms\Components\TextInput::make('address')
                     ->label('Dirección')
+                    ->placeholder('Ingresa la direccion del empleado (opcional)')
                     ->maxLength(255)
                     ->nullable(),
                 Forms\Components\TextInput::make('phone')
+                    ->placeholder('3324657676')
                     ->label('Teléfono')
                     ->tel()
                     ->required()
-                    ->maxLength(255),
-                Forms\Components\TextInput::make('active')
+                    ->unique(ignoreRecord:true)
+                    ->maxLength(10),
+                Forms\Components\Toggle::make('active')
                     ->label('Activo')
                     ->required()
-                    ->maxLength(255)
-                    ->default(true),
+                    ->default(true)
+                    ->onColor('success')
+                    ->offColor('danger')
+                    ->onIcon('heroicon-m-check-circle')
+                    ->offIcon('heroicon-m-x-circle'),
             ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
+            ->heading('Empleados')
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nombre')
@@ -78,8 +88,12 @@ class EmployeeResource extends Resource
                 Tables\Columns\TextColumn::make('phone')
                     ->label('Teléfono')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('active')
+                Tables\Columns\ToggleColumn::make('active')
                     ->label('Activo')
+                    ->onColor('success')
+                    ->offColor('danger')
+                    ->onIcon('heroicon-m-check-circle')
+                    ->offIcon('heroicon-m-x-circle')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Eliminado')
@@ -99,10 +113,29 @@ class EmployeeResource extends Resource
             ])
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
+                Tables\Filters\SelectFilter::make('activos')
+                    ->options([
+                        true => 'Activos',
+                        false => 'No Activos'
+                    ])->attribute('active')
+                    ->native(false)
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make(),
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make()
+                        ->before(function (Employee $record) {
+                            // dd($record);
+                            $record->update(['is_available' => false]);
+                        }),
+                    Tables\Actions\RestoreAction::make()
+                        ->after(function (Employee $record) {
+                            $record->update(['is_available' => true]);
+                        })
+                ])
+                ->button()
+                ->label('Acciones')
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

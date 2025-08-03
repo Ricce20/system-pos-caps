@@ -20,7 +20,7 @@ class Sale extends Model
         'cash_register_id'
     ];
 
-    public function emplooye(){
+    public function employee(){
         return $this->belongsTo(Employee::class);
     }
 
@@ -31,4 +31,14 @@ class Sale extends Model
     public function location(){
         return $this->belongsTo(Location::class);
     }
+
+    public function saleDetail(){
+        return $this->hasMany(SaleDetail::class);
+    }
+
+    public function cashRegister(){
+        return $this->belongsTo(CashRegister::class);
+    }
+
+   
 }

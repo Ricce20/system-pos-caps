@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('brands', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique(true);
+            $table->string('name',50)->unique(true);
             $table->boolean('is_available')->default(true);
             $table->softDeletes();
             $table->timestamps();

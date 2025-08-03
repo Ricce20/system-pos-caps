@@ -34,20 +34,24 @@ class SupplierResource extends Resource
             ->schema([
                 Forms\Components\TextInput::make('name')
                     ->label('Nombre')
-                    ->unique()
+                    ->unique(ignoreRecord:true)
                     ->required()
-                    ->maxLength(255),
+                    ->placeholder('Ingrese el nombre del proveedor')
+                    ->maxLength(50),
                 Forms\Components\TextInput::make('address')
+                    ->placeholder('Ingrese la dirección del proveedor')
                     ->label('Dirección')
                     ->maxLength(255)
-                    ->default(null),
+                    ->nullable(),
                 Forms\Components\TextInput::make('phone')
                     ->label('Teléfono')
+                    ->placeholder('Ingrese el teléfono del proveedor')
                     ->tel()
                     ->required()
-                    ->unique()
-                    ->maxLength(255),
+                    ->unique(ignoreRecord:true)
+                    ->maxLength(10),
                 Forms\Components\Select::make('brand_id')
+                    ->placeholder('Seleccione la marca del proveedor')
                     ->label('Marca')
                     ->required()
                     ->native('false')
@@ -59,22 +63,41 @@ class SupplierResource extends Resource
                     ->loadingMessage('Cargando...')
                     ->optionsLimit(20),
                 Forms\Components\Toggle::make('is_available')
+                    ->helperText('Seleccione si el proveedor está disponible')
                     ->label('Disponible')
                     ->onColor('success')
                     ->offColor('danger')
+                    ->onIcon('heroicon-m-check-circle')
+                    ->offIcon('heroicon-m-x-circle')
                     ->required(),
             ]);
+    }
+
+    /**
+     * Helper para recalcular subtotal y total general
+     */
+    protected static function recalcularTotales(callable $set, callable $get): void
+    {
+        $precio = floatval($get('precio_compra')) ?: 0;
+        $cantidad = floatval($get('quantity')) ?: 0;
+
+        // Subtotal por fila
+        $set('subtotal', $precio * $cantidad);
+
+        // Total general sumando todos los subtotales del repeater
+        $total = collect($get('../../items') ?? [])
+            ->sum(fn ($item) => floatval($item['subtotal'] ?? 0));
+        $set('../../total', $total);
     }
 
     public static function table(Table $table): Table
     {
         return $table
+            ->heading('Proveedores')
             ->columns([
                 Tables\Columns\TextColumn::make('name')
+                    ->alignCenter()
                     ->label('Nombre')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('address')
-                    ->label('Dirección')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('phone')
                     ->label('Teléfono')
@@ -83,9 +106,12 @@ class SupplierResource extends Resource
                     ->label('Marca')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\IconColumn::make('is_available')
+                Tables\Columns\ToggleColumn::make('is_available')
                     ->label('Disponible')
-                    ->boolean(),
+                    ->onColor('success')
+                    ->offColor('danger')
+                    ->onIcon('heroicon-m-check-circle')
+                    ->offIcon('heroicon-m-x-circle'),
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Eliminado el')
                     ->dateTime()
@@ -116,6 +142,15 @@ class SupplierResource extends Resource
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make()
+                        ->before(function (Supplier $record) {
+                            // dd($record);
+                            $record->update(['is_available' => false]);
+                        }),
+                    Tables\Actions\RestoreAction::make()
+                        ->after(function (Supplier $record) {
+                            $record->update(['is_available' => true]);
+                        })
                 ])
                 ->button()
                 ->label('Acciones')

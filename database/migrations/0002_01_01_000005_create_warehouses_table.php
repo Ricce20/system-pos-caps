@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('warehouses', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique(true);
-            $table->string('location')->nullable();
-            $table->boolean('active');
+            $table->string('name',100)->unique(true);
+            $table->string('location',255)->nullable();
+            $table->boolean('active')->default(true);
             $table->boolean('is_primary')->default(false);
             $table->softDeletes();
             $table->timestamps();

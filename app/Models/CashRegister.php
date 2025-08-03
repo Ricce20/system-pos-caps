@@ -20,8 +20,8 @@ class CashRegister extends Model
         return $this->belongsTo(Location::class);
     }
 
-    public function employee(){
-        return $this->belongsTo(Employee::class);
+    public function cashRegisterDetail(){
+        return $this->hasMany(CashRegisterDetail::class);
     }
 
     public function user(){

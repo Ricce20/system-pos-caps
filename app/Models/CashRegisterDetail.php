@@ -10,14 +10,15 @@ class CashRegisterDetail extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'chas_register_id',
+        'cash_register_id',
         'start_date',
         'end_date',
         'starting_quantity',
         'closing_amount',
+        'counted_amount'
     ];
 
-    public function cash_register(){
+    public function cashRegister(){
         return $this->belongsTo(CashRegister::class);
     }
 

@@ -15,9 +15,10 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('cash_register_id');
             $table->dateTime('start_date');
-            $table->dateTime('end_date');
+            $table->dateTime('end_date')->nullable(true);
             $table->decimal('starting_quantity');
-            $table->decimal('closing_amount');
+            $table->decimal('closing_amount')->nullable(true);
+            $table->decimal('counted_amount')->nullable(true);
             $table->softDeletes();
             $table->timestamps();
         });

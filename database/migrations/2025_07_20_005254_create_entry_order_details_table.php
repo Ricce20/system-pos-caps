@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('entry_order_id');
             $table->unsignedBigInteger('item_id');
             $table->integer('quantity');
-            $table->decimal('subtotal')->nullable(true);
+            $table->decimal('subtotal',10,2)->nullable(true);
             $table->softDeletes();
             $table->timestamps();
             

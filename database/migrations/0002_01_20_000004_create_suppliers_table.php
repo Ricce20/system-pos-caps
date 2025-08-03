@@ -13,16 +13,15 @@ return new class extends Migration
     {
         Schema::create('suppliers', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('address')->nullable();
-            $table->string('phone');
+            $table->string('name',50)->unique(true);
+            $table->string('address',255)->nullable();
+            $table->string('phone',10)->unique(true);
             $table->unsignedBigInteger('brand_id');
-            $table->boolean('is_available');
+            $table->boolean('is_available')->default(true);
             $table->softDeletes();
             $table->timestamps();
 
             $table->foreign('brand_id')->references('id')->on('brands')->onDelete('restrict')->onUpdate('cascade');
-            $table->unique(['name','brand_id']);
 
         });
     }

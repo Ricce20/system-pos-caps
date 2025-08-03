@@ -34,12 +34,15 @@ class BrandResource extends Resource
                     ->label('Nombre')
                     ->placeholder('Ingrese el nombre de la marca')
                     ->required()
-                    ->maxLength(255)
+                    ->maxLength(50)
                     ->unique(ignoreRecord: true),
                 Forms\Components\Toggle::make('is_available')
                     ->label('Disponible')
+                    ->helperText('Seleccione si la marca está disponible')
                     ->onColor('success')
                     ->offColor('danger')
+                    ->onIcon('heroicon-m-check-circle')
+                    ->offIcon('heroicon-m-x-circle')
                     ->required(),
             ]);
     }
@@ -53,9 +56,12 @@ class BrandResource extends Resource
                     ->label('Nombre')
                     ->sortable()
                     ->searchable(),
-                Tables\Columns\IconColumn::make('is_available')
+                Tables\Columns\ToggleColumn::make('is_available')
                     ->label('Disponible')
-                    ->boolean(),
+                    ->onColor('success')
+                    ->offColor('danger')
+                    ->onIcon('heroicon-m-check-circle')
+                    ->offIcon('heroicon-m-x-circle'),
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Eliminado')
                     ->dateTime()
@@ -86,6 +92,15 @@ class BrandResource extends Resource
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make()
+                        ->before(function (Brand $record) {
+                            // dd($record);
+                            $record->update(['is_available' => false]);
+                        }),
+                    Tables\Actions\RestoreAction::make()
+                        ->after(function (Brand $record) {
+                            $record->update(['is_available' => true]);
+                        })
                 ])
                 ->button()
                 ->label('Acciones')

@@ -2,6 +2,9 @@
 
 namespace App\Filament\Resources\WarehouseResource\RelationManagers;
 
+use App\Models\Item;
+use App\Models\Warehouse;
+use App\Models\WarehouseItem;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -23,11 +26,20 @@ class WarehouseItemRelationManager extends RelationManager
             ->schema([
                 Forms\Components\Select::make('item_id')
                     ->label('Producto')
-                    ->relationship(
-                        'item','product_id'
-                    )
-                    ->getOptionLabelFromRecordUsing(fn (Model $record) => "{$record->product->name} - {$record->size->name}")
+                    // ->relationship(
+                    //     'item','product_id'
+                    // )
+                    ->options(function(){
+                        $itemsId = WarehouseItem::where('warehouse_id',$this->getOwnerRecord()->id)->pluck('item_id');
+
+                        return Item::with(['product','size'])->whereNotIn('id',$itemsId)->where('is_available',true)->get()
+                        ->mapWithKeys(fn ($item) => [
+                            $item->id => "{$item->product->name} - {$item->size->name}"
+                        ]);;
+                    })
+                    // ->getOptionLabelFromRecordUsing(fn (Model $record) => "{$record->product->name} - {$record->size->name}")
                     ->preload()
+                    ->searchable()
                     ->native(false)
                     ->required()
                     ->unique(modifyRuleUsing: function(Unique $rule, Get $get){
@@ -37,11 +49,14 @@ class WarehouseItemRelationManager extends RelationManager
                     ->label('Stock(Cantidad)')
                     ->required()
                     ->numeric()
+                    ->placeholder('ej: 100')
                     ->minValue(1),
                 Forms\Components\Toggle::make('is_available')
                     ->label('Disponible')
                     ->onColor('success')
                     ->offColor('danger')
+                    ->onIcon('heroicon-m-check-circle')
+                    ->offIcon('heroicon-m-x-circle')
                     ->required()
             ]);
     }
@@ -58,9 +73,12 @@ class WarehouseItemRelationManager extends RelationManager
                     ->label('Talla'),
                 Tables\Columns\TextColumn::make('stock')
                     ->label('Stock'),
-                Tables\Columns\IconColumn::make('is_available')
+                Tables\Columns\ToggleColumn::make('is_available')
                     ->label('Disponible')
-                    ->boolean(),
+                    ->onColor('success')
+                    ->offColor('danger')
+                    ->onIcon('heroicon-m-check-circle')
+                    ->offIcon('heroicon-m-x-circle'),
                 Tables\Columns\TextColumn::make('updated_at')
                     ->label('Actualizado')
                     ->dateTime()
@@ -84,6 +102,15 @@ class WarehouseItemRelationManager extends RelationManager
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make()
+                        ->before(function (WarehouseItem $record) {
+                            // dd($record);
+                            $record->update(['is_available' => false]);
+                        }),
+                    Tables\Actions\RestoreAction::make()
+                        ->after(function (WarehouseItem $record) {
+                            $record->update(['is_available' => true]);
+                        })
                 ])
                 ->button()
                 ->label('Acciones')

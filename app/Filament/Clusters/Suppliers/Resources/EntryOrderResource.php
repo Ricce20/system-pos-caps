@@ -19,6 +19,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Clusters\Suppliers\Resources\EntryOrderResource\RelationManagers\EntryOrderDetailRelationManager;
 use App\Filament\Clusters\Suppliers\Resources\EntryOrderResource\RelationManagers;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 
 class EntryOrderResource extends Resource
 {
@@ -36,135 +38,151 @@ class EntryOrderResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-        ->schema([
-            Forms\Components\Select::make('supplier_id')
-                ->label('Proveedor')
-                ->placeholder('Selecciona a un proveedor')
-                ->relationship('supplier','name', function ($query) {
-                    return $query->where('is_available', true)->whereNull('deleted_at');
-                })
-                ->loadingMessage('Cargando...')
-                ->optionsLimit(20)
-                ->required()
-                ->searchable()
-                ->native(false)
-                ->preload()
-                ->reactive() // necesario para usarlo dentro del Repeater
-                ->afterStateUpdated(function ($state, callable $set) {
-                    if (empty($state)) {
-                        $set('items', []); // Limpia el repeater si se deselecciona el proveedor
-                    }
-                })
-                ->helperText('Cambiar el proveedor limpiará los productos seleccionados.'),
+            ->schema([
 
-            Forms\Components\TextInput::make('notes')
-                ->label('Notas')
-                ->placeholder('Agregar nota importante')
-                ->nullable()
-                ->maxLength(255),
+                // 🔹 Selección de proveedor
+                Forms\Components\Select::make('supplier_id')
+                    ->label('Proveedor')
+                    ->placeholder('Selecciona un proveedor')
+                    ->relationship('supplier','name', fn ($query) =>
+                        $query->where('is_available', true)->whereNull('deleted_at')
+                    )
+                    ->searchable()
+                    ->preload()
+                    ->native(false)
+                    ->required()
+                    ->reactive()
+                    ->loadingMessage('Cargando...')
+                    ->optionsLimit(20)
+                    ->afterStateUpdated(function ($state, callable $set) {
+                        if(empty($state)) {
+                            $set('items', []); // Limpia el repeater si se deselecciona el proveedor
+                        }
+                    })
+                    ->helperText('Cambiar el proveedor limpia los productos seleccionados.'),
 
-            // Campo total fuera del repeater
-            Forms\Components\TextInput::make('total')
-                ->label('Total a pagar')
-                ->numeric()
-                ->readOnly()
-                ->dehydrated(true)
-                ->reactive(),
+                // 🔹 Notas
+                Forms\Components\TextInput::make('notes')
+                    ->label('Notas')
+                    ->placeholder('Agregar nota importante')
+                    ->maxLength(255)
+                    ->nullable(),
 
-            // Repeater de items/productos
-            Forms\Components\Repeater::make('items')
-                ->schema([
-                    Forms\Components\Select::make('item_id')
-                        ->label('Producto')
-                        ->options(function (callable $get) {
-                            $supplierId = $get('../../supplier_id');
-                            if (!$supplierId) {
-                                return [];
-                            }
-                            // Traer los IDs de los items relacionados con el proveedor
-                            $itemIds = SupplierItem::where('supplier_id', $supplierId)->where('is_primary',true)->pluck('item_id');
-                            // Traer los items con sus relaciones
-                            return Item::with(['product', 'size'])
-                                ->whereIn('id', $itemIds)
-                                ->where('is_available', true)
-                                ->whereNull('deleted_at')
-                                ->get()
-                                ->mapWithKeys(function ($item) {
-                                    $label = "{$item->product->name} - {$item->size->name}";
-                                    return [$item->id => $label];
-                                });
-                        })
-                        ->preload()
-                        ->native(false)
-                        ->searchable()
-                        ->loadingMessage('Cargando...')
-                        ->optionsLimit(20)
-                        ->required()
-                        ->reactive()
-                        ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                            // Obtener supplier_id desde el form principal
-                            $supplierId = data_get($get('../../supplier_id'), null);
+                // 🔹 Total general
+                Forms\Components\TextInput::make('total')
+                    ->label('Total a pagar')
+                    ->numeric()
+                    ->readOnly()
+                    ->prefix('$')
+                    ->dehydrated(true)
+                    ->reactive(),
 
-                            if ($supplierId && $state) {
-                                $precio = SupplierItem::where('supplier_id', $supplierId)
-                                    ->where('item_id', $state)
-                                    ->value('purchase_price');
+                // 🔹 Repeater de items/productos
+                Forms\Components\Repeater::make('items')
+                    ->schema([
+                        // Producto
+                        Forms\Components\Select::make('item_id')
+                            ->label('Producto')
+                            ->options(function (callable $get) {
+                                $supplierId = $get('../../supplier_id');
+                                if (!$supplierId) return [];
 
-                                $set('precio_compra', $precio ?? 0);
-                            } else {
-                                $set('precio_compra', 0);
-                            }
+                                // Cachea los IDs de items primary de este supplier
+                                $itemIds = SupplierItem::where('supplier_id', $supplierId)
+                                    ->where('is_primary', true)
+                                    ->pluck('item_id');
 
-                            // Calcular subtotal
-                            $precio = floatval($get('precio_compra')) ?? 0;
-                            $cantidad = floatval($get('quantity')) ?? 0;
-                            $set('subtotal', $precio * $cantidad);
+                                // Trae los items disponibles y genera labels
+                                return Item::with(['product', 'size'])
+                                    ->whereIn('id', $itemIds)
+                                    ->where('is_available', true)
+                                    ->whereNull('deleted_at')
+                                    ->get()
+                                    ->mapWithKeys(fn ($item) =>
+                                        [$item->id => "{$item->product->name} - {$item->size->name}"]
+                                    );
+                            })
+                            ->preload()
+                            ->native(false)
+                            ->searchable()
+                            ->loadingMessage('Cargando...')
+                            ->optionsLimit(20)
+                            ->required()
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                $supplierId = $get('../../supplier_id');
+                                if ($supplierId && $state) {
+                                    // Traer el precio de compra
+                                    $precio = SupplierItem::where('supplier_id', $supplierId)
+                                        ->where('item_id', $state)
+                                        ->value('purchase_price') ?? 0;
+                                    $set('precio_compra', $precio);
+                                } else {
+                                    $set('precio_compra', 0);
+                                }
 
-                            // Calcular el total general sumando todos los subtotales
-                            $members = $get('../../items') ?? [];
-                            $total = collect($members)->sum(function ($item) {
-                                return floatval($item['subtotal'] ?? 0);
-                            });
-                            $set('../../total', $total);
-                        }),
+                                // Recalcular subtotal y total
+                                // self::recalcularTotales($set, $get);
+                            }),
 
-                    Forms\Components\TextInput::make('quantity')
-                        ->label('Cantidad')
-                        ->required()
-                        ->numeric()
-                        ->default(1)
-                        ->reactive()
-                        ->afterStateUpdated(function (callable $set, callable $get) {
-                            $precio = floatval($get('precio_compra')) ?? 0;
-                            $cantidad = floatval($get('quantity')) ?? 0;
-                            $set('subtotal', $precio * $cantidad);
+                        // Cantidad
+                        Forms\Components\TextInput::make('quantity')
+                            ->label('Cantidad')
+                            ->required()
+                            ->numeric()
+                            ->default(1)
+                            ->live(debounce: 1000)
+                            ->afterStateUpdated(function (?string $state, ?string $old,callable $set, callable $get) {
+                                if($state != $old){
+                                    self::recalcularTotales($set, $get,$state);
+                                }
+                                return;
+                                
+                            }),
 
-                            // Calcular el total general sumando todos los subtotales
-                            $members = $get('../../items') ?? [];
-                            $total = collect($members)->sum(function ($item) {
-                                return floatval($item['subtotal'] ?? 0);
-                            });
-                            $set('../../total', $total);
-                        }),
-                    Forms\Components\TextInput::make('precio_compra')
-                        ->label('Precio de compra')
-                        ->numeric()
-                        ->disabled()
-                        ->dehydrated(false),
+                        // Precio de compra (solo lectura)
+                        Forms\Components\TextInput::make('precio_compra')
+                            ->label('Precio de compra')
+                            ->numeric()
+                            ->prefix('$')
+                            ->disabled()
+                            ->dehydrated(false),
 
-                    Forms\Components\TextInput::make('subtotal')
-                        ->label('SubTotal')
-                        ->numeric()
-                        ->disabled()
-                        ->dehydrated(true),
-                ])
-                ->hiddenOn(['view','edit'])
-                ->columns(4)
-                ->reactive()
-                ->disabled(fn (callable $get) => empty($get('supplier_id'))),
-        ])
-        ->columns(1);
+                        // Subtotal (solo lectura)
+                        Forms\Components\TextInput::make('subtotal')
+                            ->label('SubTotal')
+                            ->numeric()
+                            ->prefix('$')
+                            ->disabled()
+                            ->dehydrated(true),
+                    ])
+                    ->columns(4)
+                    ->reactive()
+                    ->hiddenOn(['view','edit'])
+                    ->disabled(fn (callable $get) => empty($get('supplier_id'))),
+            ])
+            ->columns(1);
     }
+
+        /**
+     * Helper para recalcular subtotal y total general de la venta.
+     */
+    protected static function recalcularTotales(callable $set, callable $get, $state): void
+    {
+        $precio = floatval($get('precio_compra')) ?: 0;
+        $cantidad = floatval($state) ?: 0;
+
+        // Subtotal por fila
+        $set('subtotal', $precio * $cantidad);
+
+        // Total general sumando todos los subtotales del repeater
+        $total = collect($get('../../items') ?? [])
+            ->sum(fn ($item) => floatval($item['subtotal'] ?? 0));
+        $set('../../total', $total);
+        return;
+    }
+
+
 
     public static function table(Table $table): Table
     {
@@ -172,27 +190,19 @@ class EntryOrderResource extends Resource
             ->heading('Registro de Compras')
             ->columns([
                 Tables\Columns\TextColumn::make('supplier.name')
+                    ->searchable()
+                    ->sortable()
                     ->label('Proovedor'),
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Ralizado por'),
                 Tables\Columns\TextColumn::make('date_order')
                     ->dateTime()
                     ->label('Fecha de compra'),
-                Tables\Columns\TextColumn::make('notes')
-                    ->label('Notas'),
                 Tables\Columns\TextColumn::make('total')
                     ->numeric()
                     ->prefix('$')
                     ->label('Total de compra')
                     ->alignCenter(),
-                // Tables\Columns\TextColumn::make('created_at')
-                //     ->dateTime()
-                //     ->sortable()
-                //     ->toggleable(isToggledHiddenByDefault: true),
-                // Tables\Columns\TextColumn::make('updated_at')
-                //     ->dateTime()
-                //     ->sortable()
-                //     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 Tables\Filters\TrashedFilter::make()

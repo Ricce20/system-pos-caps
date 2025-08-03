@@ -78,12 +78,19 @@ class User extends Authenticatable implements JWTSubject
     /**
      * Relación muchos a muchos con Employee a través de la tabla pivote users_employees.
      */
-    public function employees()
-    {
-        return $this->belongsToMany(Employee::class, 'users_employees', 'user_id', 'employee_id')
-                    ->withTimestamps()
-                    ->withPivot(['online', 'active', 'deleted_at']);
-    }
+    // public function employee()
+    // {
+    //     return $this->belongsToMany(Employee::class, 'users_employees', 'user_id', 'employee_id')
+    //                 ->withTimestamps()
+    //                 ->withPivot(['online', 'active', 'deleted_at']);
+    // }
 
+    /**
+     * Relación simple con Employee.
+     */
+    public function employee()
+    {
+        return $this->belongsTo(Employee::class);
+    }
     
 }

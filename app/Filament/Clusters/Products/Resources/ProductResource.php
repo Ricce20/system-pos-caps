@@ -11,9 +11,14 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Columns\Layout\Panel;
+use Filament\Tables\Columns\Layout\Stack;
+use Filament\Tables\Columns\Summarizers\Average;
+use Filament\Tables\Columns\Summarizers\Count;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ProductResource extends Resource
@@ -37,7 +42,7 @@ class ProductResource extends Resource
                     ->placeholder('Ingrese el nombre del producto')
                     ->required()
                     ->unique(ignoreRecord: true)
-                    ->maxLength(255),
+                    ->maxLength(50),
 
                 Forms\Components\TextInput::make('description')
                     ->label('Descripción')
@@ -86,29 +91,36 @@ class ProductResource extends Resource
 
                 Forms\Components\Toggle::make('is_available')
                     ->label('Disponible')
+                    ->helperText('Seleccione si el producto está disponible')
                     ->onColor('success')
                     ->offColor('danger')
+                    ->onIcon('heroicon-m-check-circle')
+                    ->offIcon('heroicon-m-x-circle')
                     ->required(),
                 Forms\Components\FileUpload::make('image_1')
                     ->label('Imagen 1')
                     ->image()
                     ->maxParallelUploads(1)
                     ->nullable()
+                    ->preserveFilenames()
                     ->visibility('public'),
                 Forms\Components\FileUpload::make('image_2')
                     ->label('Imagen 2')
                     ->image()
                     ->maxParallelUploads(1)
+                    ->preserveFilenames()
                     ->nullable()
                     ->visibility('public'),
                 Forms\Components\FileUpload::make('image_3')
                     ->label('Imagen 3')
+                    ->preserveFilenames()
                     ->image()
                     ->maxParallelUploads(1)
                     ->nullable()
                     ->visibility('public')
 
-            ]);
+            ])
+            ->columns(3);
     }
 
     public static function table(Table $table): Table
@@ -116,66 +128,84 @@ class ProductResource extends Resource
         return $table
             ->heading('Productos')
             ->columns([
-                Tables\Columns\TextColumn::make('name')
-                    ->label('Nombre'),
-                //     ->searchable(),
-                // Tables\Columns\TextColumn::make('description')
-                //     ->label('Descripción')
-                //     ->searchable(),
-                Tables\Columns\TextColumn::make('brand.name')
-                    ->label('Marca'),
-                Tables\Columns\TextColumn::make('modelCap.name')
-                    ->label('Modelo'),
-                Tables\Columns\IconColumn::make('is_available')
-                    ->label('Disponible')
-                    ->alignCenter()
-                    ->boolean(),
-                Tables\Columns\ImageColumn::make('image_1')
-                    ->disk('public')
-                    ->visibility('public')
-                    ->label('Imagen 1'),
-                Tables\Columns\TextColumn::make('deleted_at')
-                    ->label('Eliminado')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Creado')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->label('Actualizado')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                Panel::make([
+                    Stack::make([
+                        Tables\Columns\ImageColumn::make('image_1')
+                            ->disk('public')
+                            ->visibility('public')
+                            ->label('Imagen')
+                            ->size(80)
+                            ->alignCenter(),
+
+                            Tables\Columns\TextColumn::make('name')
+                            ->label('Nombre')
+                            ->alignCenter()
+                            ->searchable()
+                            ->sortable()
+                            ->weight('bold'),
+
+                            Tables\Columns\IconColumn::make('is_available')
+                            ->label('Disponible')
+                            ->boolean()
+                            ->sortable()
+                            ->summarize([
+                                Count::make()
+                                ->prefix('Total de Productos: ')
+                            ])
+                            // ->onColor('success')
+                            // ->offColor('danger')
+                            // ->onIcon('heroicon-m-check-circle')
+                            // ->offIcon('heroicon-m-x-circle')
+                            // ->disabled(fn () => auth()->user()->role === 'empleado')
+                            ->alignCenter(),
+
+                            Tables\Columns\TextColumn::make('updated_at')
+                            ->label('Actualizado')
+                            ->dateTime('d/m/Y H:i')
+                            ->alignCenter()
+                            ->color('gray'),
+                    ])->space(1) // Espacio entre elementos del stack
+                ])
+                
             ])
+            
+            ->searchOnBlur()
             ->filters([
                 Tables\Filters\TrashedFilter::make()
                     ->native(false),
-                Tables\Filters\SelectFilter::make('activos')
-                    ->options([
-                        true => 'Disponibles',
-                        false => 'No Disponibles'
-                    ])->attribute('is_available')
-                    ->native(false),
+
+                // Tables\Filters\SelectFilter::make('activos')
+                // ->options([
+                //     true => 'Disponibles',
+                //     false => 'No Disponibles'
+                // ])->attribute('is_available')
+                // ->native(false),
+
                 Tables\Filters\SelectFilter::make('categoria')
                     ->native(false)
-                    ->relationship('category', 'name', fn (Builder $query) => $query->withTrashed()),
-                Tables\Filters\SelectFilter::make('marca')
-                    ->native(false)
-                    ->relationship('brand', 'name', fn (Builder $query) => $query->withTrashed()),
+                    ->relationship('category', 'name', fn (Builder $query) => $query->where('is_available',true)->withTrashed()),
                 Tables\Filters\SelectFilter::make('modelo')
                     ->native(false)
-                    ->relationship('modelCap', 'name', fn (Builder $query) => $query->withTrashed())
-            ], layout: FiltersLayout::Modal)
+                    ->relationship('modelCap', 'name', fn (Builder $query) => $query->where('is_available',true)->withTrashed()),
+
+                Tables\Filters\SelectFilter::make('marca')
+                    ->native(false)
+                    ->relationship('brand', 'name', fn (Builder $query) => $query->where('is_available',true)->withTrashed()),
+            ], layout: Tables\Enums\FiltersLayout::Modal)
             ->actions([
-                Tables\Actions\ActionGroup::make([
-                    Tables\Actions\ViewAction::make(),
+                // Tables\Actions\ActionGroup::make([
+                    // Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make(),
-                ])
-                ->button()
-                ->label('Acciones')
+                    Tables\Actions\DeleteAction::make()
+                        ->before(function (Product $record) {
+                            // dd($record);
+                            $record->update(['is_available' => false]);
+                        }),
+                    Tables\Actions\RestoreAction::make()
+                        ->after(function (Product $record) {
+                            $record->update(['is_available' => true]);
+                        })
+                // ])->button()->label('Acciones')
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -184,10 +214,12 @@ class ProductResource extends Resource
                     Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ])
-            ->modifyQueryUsing(fn (Builder $query) => 
-                $query->latest() // Equivale a ->orderBy('created_at', 'desc')
-            )
-            ->deferLoading();
+            ->modifyQueryUsing(fn (Builder $query) => $query->latest())
+            ->deferLoading()
+            ->contentGrid([
+                'md' => 2,
+                'xl' => 3,
+            ]);
     }
 
     public static function getRelations(): array

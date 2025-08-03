@@ -1,23 +1,18 @@
 <?php
 
-namespace App\Filament\Clusters\Suppliers\Resources\EntryOrderResource\RelationManagers;
+namespace App\Filament\Resources\SaleResource\RelationManagers;
 
-use App\Models\EntryOrderDetail;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class EntryOrderDetailRelationManager extends RelationManager
+class SaleDetailRelationManager extends RelationManager
 {
-    protected static string $relationship = 'EntryOrderDetail';
-
-    protected static ?string $title = 'Detalles de Compra';
-
+    protected static string $relationship = 'SaleDetail';
 
     public function form(Form $form): Form
     {
@@ -26,6 +21,7 @@ class EntryOrderDetailRelationManager extends RelationManager
                 Forms\Components\TextInput::make('item_id')
                     ->required()
                     ->maxLength(255),
+                
             ]);
     }
 
@@ -35,27 +31,16 @@ class EntryOrderDetailRelationManager extends RelationManager
             ->recordTitleAttribute('item_id')
             ->columns([
                 Tables\Columns\TextColumn::make('item.product.name')
-                    ->description(fn (EntryOrderDetail $record):string => "{$record->item->size->name}")
-                    ->label('Articulo')
-                    ->wrap(),
-                    
+                    ->label('Producto'),
+                Tables\Columns\TextColumn::make('item.size.name')
+                    ->label('Talla'),
                 Tables\Columns\TextColumn::make('quantity')
-                    ->numeric()
-                    ->prefix('U')
                     ->label('Cantidad')
-                    ->wrap(),
-                
-                Tables\Columns\TextColumn::make('item.supplierItem.purchase_price')
-                    ->label('Precio de Compra')
-                    ->numeric()
-                    ->prefix('$')
-                    ->wrap(),
-
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('subtotal')
                     ->label('Subtotal')
-                    ->numeric()
                     ->prefix('$')
-                    ->wrap(),
+                    ->sortable(),
             ])
             ->filters([
                 //

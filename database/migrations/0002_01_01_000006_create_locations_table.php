@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('locations', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('address');
-            $table->string('phone');
-            $table->boolean('active');
+            $table->string('name',100);
+            $table->string('address',255);
+            $table->string('phone')->nullable(true);
+            $table->boolean('active')->default(true);
             $table->unsignedBigInteger('warehouse_id');
             $table->softDeletes();
             $table->timestamps();

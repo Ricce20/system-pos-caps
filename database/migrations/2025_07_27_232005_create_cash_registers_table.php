@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('cash_registers', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique();
+            $table->string('name',100)->unique();
             $table->boolean('is_available')->default(true);
             $table->unsignedBigInteger('location_id');
             $table->unsignedBigInteger('user_id');

@@ -19,6 +19,9 @@ return new class extends Migration
             $table->decimal('subtotal');
             $table->softDeletes();
             $table->timestamps();
+
+            $table->foreign('sale_id')->references('id')->on('sales')->onDelete('restrict')->onUpdate('cascade');
+            $table->foreign('item_id')->references('id')->on('items')->onDelete('restrict')->onUpdate('cascade');
         });
     }
 

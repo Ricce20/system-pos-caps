@@ -36,11 +36,14 @@ class CategoryResource extends Resource
                     ->placeholder('Ingrese el nombre de la categoría')
                     ->required()
                     ->unique(ignoreRecord: true)
-                    ->maxLength(255),
+                    ->maxLength(50),
                 Forms\Components\Toggle::make('is_available')
                     ->label('Disponible')
+                    ->helperText('Seleccione si la categoría está disponible')
                     ->onColor('success')
                     ->offColor('danger')
+                    ->onIcon('heroicon-m-check-circle')
+                    ->offIcon('heroicon-m-x-circle')
                     ->required(),
             ]);
     }
@@ -53,9 +56,12 @@ class CategoryResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nombre')
                     ->searchable(),
-                Tables\Columns\IconColumn::make('is_available')
+                Tables\Columns\ToggleColumn::make('is_available')
                     ->label('Disponible')
-                    ->boolean(),
+                    ->onColor('success')
+                    ->offColor('danger')
+                    ->onIcon('heroicon-m-check-circle')
+                    ->offIcon('heroicon-m-x-circle'),
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Eliminado')
                     ->dateTime()
@@ -86,6 +92,15 @@ class CategoryResource extends Resource
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make()
+                        ->before(function (Category $record) {
+                            // dd($record);
+                            $record->update(['is_available' => false]);
+                        }),
+                    Tables\Actions\RestoreAction::make()
+                        ->after(function (Category $record) {
+                            $record->update(['is_available' => true]);
+                        })
                 ])
                 ->button()
                 ->label('Acciones')

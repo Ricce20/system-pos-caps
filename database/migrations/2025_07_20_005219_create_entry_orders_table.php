@@ -16,8 +16,8 @@ return new class extends Migration
             $table->unsignedBigInteger('supplier_id');
             $table->unsignedBigInteger('user_id');
             $table->dateTime('date_order');
-            $table->string('notes');
-            $table->string('total');
+            $table->string('notes',255)->nullable();
+            $table->string('total',10,2);
             $table->softDeletes();
             $table->timestamps();
             

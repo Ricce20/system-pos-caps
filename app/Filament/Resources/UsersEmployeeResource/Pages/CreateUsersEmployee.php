@@ -28,7 +28,7 @@ class CreateUsersEmployee extends CreateRecord
             if ($user && !$user->is_available) {
                 Notification::make()
                 ->warning()
-                ->title('Usuario no ya asignado a otro empleado')
+                ->title('Usuario ya asignado a otro empleado')
                 ->body('Consulte sus registros')
                 ->persistent()
                 ->send();

@@ -29,18 +29,22 @@ class LocationResource extends Resource
             ->schema([
             Forms\Components\TextInput::make('name')
                 ->label('Nombre')
-                ->unique()
+                ->placeholder('Nombre del establecimiento nuevo')
+                ->unique(ignoreRecord:true)
                 ->required()
                 ->maxLength(255),
             Forms\Components\TextInput::make('address')
+                ->placeholder('Direccion del establecimeinto')
                 ->label('Dirección')
                 ->required()
                 ->maxLength(255),
             Forms\Components\TextInput::make('phone')
+                ->placeholder('3378561276')
                 ->label('Teléfono')
-                ->unique()
-                ->required()
-                ->maxLength(10),
+                ->unique(ignoreRecord:true)
+                ->nullable()
+                ->maxLength(10)
+                ->placeholder('Telefono de la sucursal(opcional)'),
             Forms\Components\Select::make('warehouse_id')
                 ->label('Almacen a utilizar')
                 ->native(false)
@@ -52,11 +56,15 @@ class LocationResource extends Resource
                 ->loadingMessage('Cargando...')
                 ->optionsLimit(20)
                 ->required()
+                ->helperText('Almacen destinado para las ventas')
                 ->unique(),
             Forms\Components\Toggle::make('active')
                 ->label('Activo')
                 ->onColor('success')
                 ->offColor('danger')
+                ->onIcon('heroicon-m-check-circle')
+                ->offIcon('heroicon-m-x-circle')
+                ->helperText('Indica si el establecimiento esta operativo')
                 ->required(),
             ]);
     }
@@ -82,9 +90,12 @@ class LocationResource extends Resource
                 ->label('Almacen asignado')
                 ->searchable()
                 ->sortable(),
-            Tables\Columns\IconColumn::make('active')
+            Tables\Columns\ToggleColumn::make('active')
                 ->label('Activo')
-                ->boolean()
+                ->onColor('success')
+                ->offColor('danger')
+                ->onIcon('heroicon-m-check-circle')
+                ->offIcon('heroicon-m-x-circle')
                 ->sortable(),
             Tables\Columns\TextColumn::make('deleted_at')
                 ->label('Eliminado')
@@ -116,6 +127,15 @@ class LocationResource extends Resource
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make()
+                        ->before(function (Location $record) {
+                            // dd($record);
+                            $record->update(['active' => false]);
+                        }),
+                    Tables\Actions\RestoreAction::make()
+                        ->after(function (Location $record) {
+                            $record->update(['active' => true]);
+                        })
                 ])
                 ->button()
                 ->label('Acciones')

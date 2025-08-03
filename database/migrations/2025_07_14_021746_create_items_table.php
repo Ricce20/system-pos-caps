@@ -16,15 +16,16 @@ return new class extends Migration
             $table->unsignedBigInteger('product_id');
             $table->unsignedBigInteger('size_id');
             // $table->decimal('price')->default(0.0);
-            $table->string('barcode')->unique()->nullable(true);
+            $table->string('code',14)->unique(true);
+            $table->string('barcode',255)->unique()->nullable(true);
             $table->string('qr')->nullable(true)->unique(true);
-            $table->boolean('is_available');
+            $table->boolean('is_available')->default(true);
             $table->softDeletes();
             $table->timestamps();
 
             $table->unique(['product_id','size_id']);
-            $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
-            $table->foreign('size_id')->references('id')->on('sizes')->onDelete('cascade');
+            $table->foreign('product_id')->references('id')->on('products')->onDelete('restrict')->onUpdate('cascade');
+            $table->foreign('size_id')->references('id')->on('sizes')->onDelete('restrict')->onUpdate('cascade');
         });
     }
 

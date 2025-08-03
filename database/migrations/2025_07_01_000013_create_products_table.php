@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique(true);
-            $table->string('description')->nullable();
+            $table->string('name',50)->unique(true);
+            $table->string('description',255)->nullable();
             $table->boolean('is_available')->default(true);
             $table->unsignedBigInteger('brand_id');
             $table->unsignedBigInteger('model_cap_id');
@@ -26,8 +26,8 @@ return new class extends Migration
             $table->timestamps();
 
             $table->foreign('category_id')->references('id')->on('categories')->onDelete('restrict')->onUpdate('cascade');
-            $table->foreign('brand_id')->references('id')->on('brands')->onDelete('cascade');
-            $table->foreign('model_cap_id')->references('id')->on('model_caps')->onDelete('cascade');
+            $table->foreign('brand_id')->references('id')->on('brands')->onDelete('restrict')->onUpdate('cascade');
+            $table->foreign('model_cap_id')->references('id')->on('model_caps')->onDelete('restrict')->onUpdate('cascade');
         });
     }
 

@@ -31,16 +31,21 @@ class UserResource extends Resource
                     ->required()
                     ->maxLength(255),
                 Forms\Components\TextInput::make('email')
+                    ->placeholder('Correo electronico (opcional)')
                     ->email()
-                    ->required()
+                    ->nullable()
                     ->maxLength(255),
-                Forms\Components\DateTimePicker::make('email_verified_at'),
                 Forms\Components\TextInput::make('password')
                     ->password()
+                    ->revealable()
                     ->required()
                     ->maxLength(255),
                 Forms\Components\Toggle::make('active')
-                    ->required(),
+                    ->required()
+                    ->onColor('success')
+                    ->offColor('danger')
+                    ->onIcon('heroicon-m-check-circle')
+                    ->offIcon('heroicon-m-x-circle'),
                 Forms\Components\TextInput::make('role')
                     ->required(),
             ]);
@@ -51,15 +56,20 @@ class UserResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
+                    ->label('Nombre')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('email')
+                    ->label('Correo electronico')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('email_verified_at')
-                    ->dateTime()
-                    ->sortable(),
-                Tables\Columns\IconColumn::make('active')
-                    ->boolean(),
-                Tables\Columns\TextColumn::make('role'),
+                Tables\Columns\ToggleColumn::make('active')
+                    ->label('Activo')
+                    ->onColor('success')
+                    ->offColor('danger')
+                    ->onIcon('heroicon-m-check-circle')
+                    ->offIcon('heroicon-m-x-circle'),
+                Tables\Columns\TextColumn::make('role')
+                    ->label('Rol del Usuario'),
+
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->dateTime()
                     ->sortable()
@@ -77,8 +87,21 @@ class UserResource extends Resource
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\ViewAction::make(),
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make()
+                        ->before(function (User $record) {
+                            // dd($record);
+                            $record->update(['active' => false]);
+                        }),
+                    Tables\Actions\RestoreAction::make()
+                        ->after(function (User $record) {
+                            $record->update(['active' => true]);
+                        })
+                ])
+                ->button()
+                ->label('Acciones')
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -86,7 +109,10 @@ class UserResource extends Resource
                     Tables\Actions\ForceDeleteBulkAction::make(),
                     Tables\Actions\RestoreBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->modifyQueryUsing(fn (Builder $query) => 
+                $query->where('id', '!=', auth()->user()->id)
+            );
     }
 
     public static function getRelations(): array

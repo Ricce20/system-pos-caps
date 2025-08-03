@@ -7,10 +7,12 @@ use App\Filament\Resources\WarehouseResource\RelationManagers;
 use App\Models\Warehouse;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class WarehouseResource extends Resource
@@ -50,15 +52,24 @@ class WarehouseResource extends Resource
                     ->label('Activo')
                     ->onColor('success')
                     ->offColor('danger')
-                    ->default(true)
+                    ->onIcon('heroicon-m-check-circle')
+                    ->offIcon('heroicon-m-x-circle')
                     ->helperText('Indica si el almacén está activo o no'),
                 Forms\Components\Toggle::make('is_primary')
                     ->label('Principal')
                     ->onColor('success')
                     ->offColor('danger')
-                    ->default(true)
-                    ->unique(ignoreRecord: true)
-                    ->helperText('Indica si el almacén es el pricipal para recibir mercancia'),
+                    ->onIcon('heroicon-m-check-circle')
+                    ->offIcon('heroicon-m-x-circle')
+                    ->helperText('Indica si el almacén es el pricipal para recibir mercancia')
+                    ->afterStateUpdated(function ($state, callable $set) {
+                        if ($state) {
+                            Notification::make()
+                                ->title('Este almacén será el principal')
+                                ->success()
+                                ->send();
+                        }
+                    }),
             ]);
     }
 
@@ -72,8 +83,12 @@ class WarehouseResource extends Resource
                 Tables\Columns\TextColumn::make('location')
                     ->label('Ubicacion')
                     ->searchable(),
-                Tables\Columns\IconColumn::make('active')
-                    ->boolean(),
+                Tables\Columns\ToggleColumn::make('active')
+                    ->label('Activo')
+                    ->onColor('success')
+                    ->offColor('danger')
+                    ->onIcon('heroicon-m-check-circle')
+                    ->offIcon('heroicon-m-x-circle'),
                 Tables\Columns\IconColumn::make('is_primary')
                     ->label('Almacén pricipal')
                     ->boolean(),
@@ -107,6 +122,15 @@ class WarehouseResource extends Resource
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make()
+                        ->before(function (Warehouse $record) {
+                            // dd($record);
+                            $record->update(['active' => false,'is_primary' => false]);
+                        }),
+                    Tables\Actions\RestoreAction::make()
+                        ->after(function (Warehouse $record) {
+                            $record->update(['active' => true]);
+                        })
                 ])
                 ->button()
                 ->label('Acciones')

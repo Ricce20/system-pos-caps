@@ -22,7 +22,7 @@ class CategoryResource extends Resource
 
     protected static ?string $cluster = Products::class;
 
-    protected static ?string $modelLabel = 'Categoria';
+    protected static ?string $modelLabel = 'Categoría';
     
     protected static ?string $navigationLabel = 'Categorias';
 

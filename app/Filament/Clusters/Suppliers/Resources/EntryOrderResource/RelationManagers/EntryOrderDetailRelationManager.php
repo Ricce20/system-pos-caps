@@ -3,6 +3,7 @@
 namespace App\Filament\Clusters\Suppliers\Resources\EntryOrderResource\RelationManagers;
 
 use App\Models\EntryOrderDetail;
+use App\Models\SupplierItem;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -36,25 +37,34 @@ class EntryOrderDetailRelationManager extends RelationManager
             ->columns([
                 Tables\Columns\TextColumn::make('item.product.name')
                     ->description(fn (EntryOrderDetail $record):string => "{$record->item->size->name}")
-                    ->label('Articulo')
+                    ->label('Artículo')
                     ->wrap(),
+                Tables\Columns\TextColumn::make('item.size.name')
+                    ->label('Talla'),
                     
                 Tables\Columns\TextColumn::make('quantity')
                     ->numeric()
-                    ->prefix('U')
                     ->label('Cantidad')
                     ->wrap(),
                 
-                Tables\Columns\TextColumn::make('item.supplierItem.purchase_price')
-                    ->label('Precio de Compra')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('sale_price')
+                    ->label('Precio de compra')
+                    ->getStateUsing(function (EntryOrderDetail $record): ?float {
+                        return SupplierItem::where('item_id', $record->item_id)
+                            ->where('is_primary', true)
+                            ->value('purchase_price');
+                    })
+                    ->money('MXN')
                     ->prefix('$')
+                    ->suffix('MXN')
+                    ->numeric()
                     ->wrap(),
 
                 Tables\Columns\TextColumn::make('subtotal')
                     ->label('Subtotal')
                     ->numeric()
                     ->prefix('$')
+                    ->suffix('MXN')
                     ->wrap(),
             ])
             ->filters([

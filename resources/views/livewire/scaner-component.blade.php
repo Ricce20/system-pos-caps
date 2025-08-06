@@ -18,7 +18,7 @@
 
                 <x-filament::section>
                     <x-slot name="heading">
-                        Total a Pagar: ${{$this->total}}
+                        Total a pagar: ${{$this->total}} MXN
                     </x-slot>
 
                     <x-filament::fieldset >

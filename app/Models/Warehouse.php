@@ -38,6 +38,20 @@ class Warehouse extends Model
         return $this->belongsTo(Location::class);
     }
 
+    public function transfersAsSource()
+    {
+        return $this->hasMany(WarehouseTransfer::class, 'source_warehouse_id');
+    }
+
+    public function transfersAsDestination()
+    {
+        return $this->hasMany(WarehouseTransfer::class, 'destination_warehouse_id');
+    }
+
+    // public function warehouseTransfer(){
+    //     return $this->hasMany(WarehouseTransfer::class);
+    // }
+
     
 
 }

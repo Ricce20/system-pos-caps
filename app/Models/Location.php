@@ -20,5 +20,8 @@ class Location extends Model
     public function warehouse(){
         return $this->belongsTo(Warehouse::class);
     }
+    public function sales(){
+        return $this->hasMany(Sale::class);
+    }
 
 }

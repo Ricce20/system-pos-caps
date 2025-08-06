@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +20,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Configurar DomPDF
+        $this->app->bind('pdf', function () {
+            return new Pdf();
+        });
     }
 }

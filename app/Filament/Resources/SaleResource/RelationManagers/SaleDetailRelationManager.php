@@ -40,6 +40,7 @@ class SaleDetailRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('subtotal')
                     ->label('Subtotal')
                     ->prefix('$')
+                    ->suffix('MXN')
                     ->sortable(),
             ])
             ->filters([

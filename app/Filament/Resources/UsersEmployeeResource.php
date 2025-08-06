@@ -27,6 +27,8 @@ class UsersEmployeeResource extends Resource
     
     protected static ?string $navigationLabel = 'Asignacion de Usuarios';
 
+    protected static ?string $pluralLabel = 'Asignaciones';
+
     public static function form(Form $form): Form
     {
         return $form
@@ -159,14 +161,14 @@ class UsersEmployeeResource extends Resource
                             ->title('Relación finalizada')
                             ->body('La relación entre usuario y empleado ha sido finalizada exitosamente.')
                     )
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
-                ]),
-            ]);
+                    ]);
+            // ->bulkActions([
+            //     Tables\Actions\BulkActionGroup::make([
+            //         Tables\Actions\DeleteBulkAction::make(),
+            //         Tables\Actions\ForceDeleteBulkAction::make(),
+            //         Tables\Actions\RestoreBulkAction::make(),
+            //     ]),
+            // ]);
     }
 
     public static function getRelations(): array

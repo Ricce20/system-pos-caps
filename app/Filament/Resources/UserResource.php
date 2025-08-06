@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Resources\Pages\Page;
 
 class UserResource extends Resource
 {
@@ -21,32 +22,48 @@ class UserResource extends Resource
 
     protected static ?string $modelLabel = 'Usuario';
     
-    protected static ?string $navigationLabel = 'Mis Usuarios';
+    protected static ?string $navigationLabel = 'Usuarios';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
                 Forms\Components\TextInput::make('name')
+                    ->label('Nombre de usuario')
                     ->required()
                     ->maxLength(255),
                 Forms\Components\TextInput::make('email')
+                    ->label('Correo Electronico')
                     ->placeholder('Correo electronico (opcional)')
                     ->email()
                     ->nullable()
                     ->maxLength(255),
                 Forms\Components\TextInput::make('password')
+                    ->hiddenOn(['edit','view'])
                     ->password()
                     ->revealable()
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->label('Contraseña')
+                    ->helperText('Debe tener al menos 8 caracteres.'),
+                Forms\Components\TextInput::make('password_confirmation')
+                    ->label('Confirmar contraseña')
+                    ->hiddenOn(['edit','view'])
+                    ->password()
+                    ->required()
+                    ->helperText('Repita la contraseña para confirmar.'),
                 Forms\Components\Toggle::make('active')
                     ->required()
                     ->onColor('success')
                     ->offColor('danger')
                     ->onIcon('heroicon-m-check-circle')
                     ->offIcon('heroicon-m-x-circle'),
-                Forms\Components\TextInput::make('role')
+                Forms\Components\Select::make('role')
+                    ->label('Rol del usuario')
+                    ->options([
+                        'empleado' => 'Empleado',
+                        'admin' => 'Administrador'
+                    ])
                     ->required(),
             ]);
     }
@@ -129,7 +146,15 @@ class UserResource extends Resource
             'create' => Pages\CreateUser::route('/create'),
             'view' => Pages\ViewUser::route('/{record}'),
             'edit' => Pages\EditUser::route('/{record}/edit'),
+            'edit-password' => Pages\EditPasswordUser::route('/{record}/edit/credential')
         ];
+    }
+    public static function getRecordSubNavigation(Page $page): array
+    {
+        return $page->generateNavigationItems([
+            // ...
+            Pages\EditPasswordUser::class,
+        ]);
     }
 
     public static function getEloquentQuery(): Builder

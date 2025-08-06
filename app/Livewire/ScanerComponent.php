@@ -288,7 +288,7 @@ class ScanerComponent extends Component implements HasForms, HasActions
     {
         try {
             DB::transaction(function () {
-                $horaLocal = Carbon::now('America/Mexico_City')->format('Y-m-d H:i:s');
+                $horaLocal = Carbon::now();
                 // dd($this->record['id']);
 
                 $SaleData = [
@@ -299,7 +299,7 @@ class ScanerComponent extends Component implements HasForms, HasActions
                     'method_of_payment' => $this->method,
                     'is_check' => false,
                     'user_id'=> auth()->user()->id,
-                    'employee_id' => auth()->user()->employee->id ?? 'Administrador'
+                    'employee_id' => auth()->user()->employee()->id ?? 'Administrador'
                 ];
                 //   dd($SaleData);
                 $sale = Sale::create($SaleData);

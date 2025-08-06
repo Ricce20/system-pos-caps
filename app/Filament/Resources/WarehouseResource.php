@@ -8,6 +8,7 @@ use App\Models\Warehouse;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
+use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -29,7 +30,7 @@ class WarehouseResource extends Resource
     
     protected static ?string $navigationLabel = 'Almacenes';
 
-    protected static ?string $navigationGroup = 'Almacenamiento';
+    protected static ?string $navigationGroup = 'Inventario';
 
 
 
@@ -81,7 +82,7 @@ class WarehouseResource extends Resource
                     ->label('Nombre')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('location')
-                    ->label('Ubicacion')
+                    ->label('Ubicación')
                     ->searchable(),
                 Tables\Columns\ToggleColumn::make('active')
                     ->label('Activo')
@@ -151,7 +152,9 @@ class WarehouseResource extends Resource
     public static function getRelations(): array
     {
         return [
-            RelationManagers\WarehouseItemRelationManager::class
+            RelationManagers\WarehouseItemRelationManager::class,
+            // RelationManagers\TransfersAsSourceRelationManager::class,
+            // RelationManagers\TransfersAsDestinationRelationManager::class,
         ];
     }
 

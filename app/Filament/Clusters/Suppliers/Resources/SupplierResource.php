@@ -7,6 +7,7 @@ use App\Filament\Clusters\Suppliers\Resources\SupplierResource\Pages;
 use App\Filament\Clusters\Suppliers\Resources\SupplierResource\RelationManagers;
 use App\Filament\Clusters\Suppliers\Resources\SupplierResource\RelationManagers\SupplierItemRelationManager;
 use App\Models\Supplier;
+use App\Models\SupplierItem;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -15,6 +16,8 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Blade;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class SupplierResource extends Resource
 {
@@ -142,6 +145,51 @@ class SupplierResource extends Resource
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make(),
+                    Tables\Actions\Action::make('generate_pdf')
+                        ->label('Imprimir Informe PDF')
+                        ->icon('heroicon-o-document-arrow-down')
+                        ->color('success')
+                        ->action(function (Supplier $record) {
+                            // Obtener los supplier items del proveedor
+                            $supplierItems = SupplierItem::with([
+                                'item.product.brand',
+                                'item.product.category', 
+                                'item.product.modelCap',
+                                'item.size'
+                            ])
+                            ->where('supplier_id', $record->id)
+                            ->get();
+
+                            // Calcular estadísticas
+                            $totalItems = $supplierItems->count();
+                            $availableItems = $supplierItems->where('is_available', true)->count();
+                            $unavailableItems = $supplierItems->where('is_available', false)->count();
+
+                            // Generar fecha local
+                            $fecha = now()->format('d/m/Y H:i:s');
+
+                            // Generar nombre del archivo
+                            $fileName = 'reporte_proveedor_' . $record->id . '_' . now()->format('Y-m-d_H-i-s') . '.pdf';
+
+                            return response()->streamDownload(function () use ($record, $supplierItems, $totalItems, $availableItems, $unavailableItems, $fecha) {
+                                echo Pdf::loadHtml(
+                                    Blade::render('pdf-supplier-report', [
+                                        'supplier' => $record,
+                                        'supplierItems' => $supplierItems,
+                                        'totalItems' => $totalItems,
+                                        'availableItems' => $availableItems,
+                                        'unavailableItems' => $unavailableItems,
+                                        'fecha' => $fecha
+                                    ])
+                                )->stream();
+                            }, $fileName, [
+                                'Content-Type' => 'application/pdf',
+                            ]);
+                        })
+                        ->modalHeading('Generar Reporte PDF')
+                        ->modalDescription('Se generará un reporte PDF con la información del proveedor y sus artículos asociados.')
+                        ->modalSubmitActionLabel('Generar PDF')
+                        ->modalCancelActionLabel('Cancelar'),
                     Tables\Actions\DeleteAction::make()
                         ->before(function (Supplier $record) {
                             // dd($record);

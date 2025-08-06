@@ -31,19 +31,31 @@ class CashRegisterDetailRelationManager extends RelationManager
             // ->recordTitleAttribute('cash_register_id')
             ->columns([
                 Tables\Columns\TextColumn::make('start_date')
-                    ->label('Fecha Apertura')
+                    ->label('Fecha de apertura')
                     ->dateTime(),
                 Tables\Columns\TextColumn::make('end_date')
-                    ->label('Fecha Cierre')
+                    ->label('Fecha de cierre')
                     ->dateTime(),
                 Tables\Columns\TextColumn::make('starting_quantity')
                     ->numeric()
-                    ->label('Cantidad de Inicio')
-                    ->prefix('$'),
+                    ->label('Cantidad de inicio')
+                    ->description('Apertura')
+                    ->prefix('$')
+                    ->suffix('MXN'),
                 Tables\Columns\TextColumn::make('closing_amount')
-                    ->label('Cantidad Cierre')
+                    ->label('Contado por el sistema')
+                    ->description('Cierre')
                     ->numeric()
                     ->prefix('$')
+                    ->suffix('MXN'),
+
+                Tables\Columns\TextColumn::make('counted_amount')
+                    ->label('Contado por el usuario')
+                    ->description('Cierre')
+                    ->numeric()
+                    ->prefix('$')
+                    ->suffix('MXN'),
+
             ])
             ->filters([
                 //

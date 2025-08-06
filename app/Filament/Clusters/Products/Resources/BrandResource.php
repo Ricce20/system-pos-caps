@@ -81,7 +81,7 @@ class BrandResource extends Resource
             ->filters([
                 Tables\Filters\TrashedFilter::make()
                     ->native(false),
-                Tables\Filters\SelectFilter::make('activos')
+                Tables\Filters\SelectFilter::make('Disponibilidad')
                     ->options([
                         true => 'Disponibles',
                         false => 'No Disponibles'

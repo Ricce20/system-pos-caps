@@ -3,16 +3,24 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+use Filament\Models\Contracts\FilamentUser;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
+use Filament\Panel;
 
-class User extends Authenticatable implements JWTSubject
+class User extends Authenticatable implements JWTSubject, FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, SoftDeletes;
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return true;
+    }
 
     /**
      * The attributes that are mass assignable.
@@ -91,6 +99,70 @@ class User extends Authenticatable implements JWTSubject
     public function employee()
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    /**
+     * Relación con CashRegister (usuario asignado a cajas).
+     */
+    public function cashRegisters()
+    {
+        return $this->hasMany(CashRegister::class);
+    }
+
+    /**
+     * Verifica si el usuario es empleado.
+     */
+    public function isEmployee(): bool
+    {
+        return $this->role === 'empleado';
+    }
+
+    /**
+     * Verifica si el usuario es administrador.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Verifica si el usuario tiene cajas asignadas.
+     */
+    public function hasAssignedCashRegisters(): bool
+    {
+        return $this->cashRegisters()->where('is_available', true)->exists();
+    }
+
+    /**
+     * Verifica si el usuario es empleado y tiene cajas asignadas.
+     */
+    public function isEmployeeWithCashRegister(): bool
+    {
+        return $this->isEmployee() && $this->hasAssignedCashRegisters();
+    }
+
+    /**
+     * Obtiene las cajas asignadas al usuario.
+     */
+    public function getAssignedCashRegisters()
+    {
+        return $this->cashRegisters()->where('is_available', true)->get();
+    }
+
+    /**
+     * Verifica si el usuario puede acceder a una caja específica.
+     */
+    public function canAccessCashRegister(CashRegister $cashRegister): bool
+    {
+        return $this->isEmployee() && $this->id === $cashRegister->user_id;
+    }
+
+    /**
+     * Verifica si el usuario tiene permisos de administrador.
+     */
+    public function hasAdminPermissions(): bool
+    {
+        return $this->isAdmin() || $this->role === 'supervisor';
     }
     
 }

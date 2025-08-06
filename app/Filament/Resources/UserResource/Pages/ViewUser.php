@@ -14,6 +14,6 @@ class ViewUser extends ViewRecord
     {
         return [
             Actions\EditAction::make(),
-        ];
+            ];
     }
 }

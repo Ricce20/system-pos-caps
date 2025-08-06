@@ -14,6 +14,7 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -25,15 +26,29 @@ class CashRegisterPage extends Page
 
     protected static string $view = 'filament.resources.cash-register-resource.pages.cash-register-page';
 
-    protected static ?string $title = 'Caja Registradora';
+    protected static ?string $title = 'Caja registradora';
 
     public $opened = false;
     public $cashregisterdetails;
+
 
     public function mount(int | string $record): void
     {
         // Busca el registro de CashRegister por ID o lanza una excepción si no lo encuentra
         $this->record = CashRegister::findOrFail($record);
+        
+        // Validar si la caja registradora está disponible
+        if (!$this->record->is_available) {
+            Notification::make()
+                ->warning()
+                ->persistent()
+                ->title('Caja Registradora No Disponible')
+                ->body('La caja registradora seleccionada no está disponible en este momento.')
+                ->send();
+                
+            redirect()->back();
+        }
+        
         $this->cashregisterdetails = CashRegisterDetail::where('cash_register_id', $record)
                                         ->whereNull('end_date')         // Para asegurarte de que 'end_date' es nulo
                                         ->first();
@@ -41,20 +56,19 @@ class CashRegisterPage extends Page
         if($this->cashregisterdetails)  $this->opened = true;              // Para obtener el primer resultado o fallar si no lo encuentra
     
     }
-
-
     protected function getHeaderActions(): array
     {
         return [
             
-            Action::make('Abrir Caja')
+            Action::make('Abrir caja')
                 ->form([
                     TextInput::make('openingBalance')
-                    ->label('Cantidad de Apertura')
+                    ->label('Cantidad de apertura')
                     ->numeric()
                     ->required()
                     ->inputMode('decimal')
                     ->prefix('$')
+                    ->suffix('MXN')
                     ->minValue(100)
                     ,
 
@@ -67,20 +81,21 @@ class CashRegisterPage extends Page
                     Notification::make()
                     ->success()
                     ->persistent()
-                    ->title('Caja Abierta correctamente')
+                    ->title('Caja abierta correctamente')
                     ->send();
                 })
                 ->requiresConfirmation()
                 ->disabled($this->opened),
 
            
-            Action::make('Cortar Caja')
+            Action::make('Cortar caja')
                 ->form([
                     TextInput::make('counted_amount')
-                    ->label('Cantidad De Cierre')
+                    ->label('Cantidad de cierre')
                     ->numeric()
                     ->inputMode('decimal')
                     ->prefix('$')
+                    ->suffix('MXN')
                     ->minValue(0)
                     ->required(),
 
@@ -139,7 +154,7 @@ class CashRegisterPage extends Page
         try {
             DB::transaction(function () use ($data) {
                 // Fecha/hora exacta del inicio
-                $startDate = $this->cashregisterdetails->start_date;
+                $startDate = \Carbon\Carbon::parse($this->cashregisterdetails->start_date)->format('Y-m-d');
 
                 // Suma de ventas desde el inicio de la caja
                 $salesTotal = Sale::where('cash_register_id', $this->record->id)

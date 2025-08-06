@@ -10,10 +10,16 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\DatePicker;
+use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-
-use function Laravel\Prompts\search;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Blade;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Database\Eloquent\Model;
 
 class CashRegisterResource extends Resource
 {
@@ -49,7 +55,7 @@ class CashRegisterResource extends Resource
                     ->relationship('location','name', function ($query) {
                         return $query->where('active', true)->whereNull('deleted_at');
                     })
-                    ->label('Sucursal Asignado')
+                    ->label('Sucursal asignada')
                     ->preload()
                     ->searchable()
                     ->native(false)
@@ -86,11 +92,11 @@ class CashRegisterResource extends Resource
                     ->onIcon('heroicon-m-check-circle')
                     ->offIcon('heroicon-m-x-circle'),
                 Tables\Columns\TextColumn::make('location.name')
-                    ->label('Sucursal Asignado')
+                    ->label('Sucursal asignada')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('user.name')
-                    ->label('Usuario Encargado')
+                    ->label('Usuario asignado')
                     ->sortable()
                     ->searchable()
 
@@ -112,7 +118,7 @@ class CashRegisterResource extends Resource
             ->filters([
                 Tables\Filters\TrashedFilter::make()
                 ->native(false),
-                Tables\Filters\SelectFilter::make('activos')
+                Tables\Filters\SelectFilter::make('Disponibilidad')
                     ->options([
                         true => 'Disponibles',
                         false => 'No Disponibles'
@@ -132,13 +138,119 @@ class CashRegisterResource extends Resource
                         ->after(function (CashRegister $record) {
                             $record->update(['is_available' => true]);
                         }),
-                    Tables\Actions\Action::make('Ir a Caja')
+                    Tables\Actions\Action::make('Ir a caja')
+                        ->visible(fn (Model $record): bool => auth()->user()->id === $record->user_id)
                         ->label('Ir a caja')
-                        ->url(fn (CashRegister $record): string => route('filament.admin.resources.cash-registers.cash', ['record' => $record]))
+                        ->icon('heroicon-o-currency-dollar')
+                        ->color('success')
+                        ->url(fn (CashRegister $record): string => route('filament.admin.resources.cash-registers.cash', ['record' => $record])),
+                    Tables\Actions\Action::make('generar_corte_caja')
+                        ->label('Generar Reporte de Corte')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->icon('heroicon-o-document-arrow-down')
+                        ->form([
+                            Select::make('report_type')
+                                ->label('Tipo de Reporte')
+                                ->options([
+                                    'daily' => 'Corte del Día',
+                                    'weekly' => 'Corte de la Semana',
+                                    'monthly' => 'Corte del Mes',
+                                    'custom' => 'Rango Personalizado',
+                                ])
+                                ->required()
+                                ->reactive()
+                                ->afterStateUpdated(function ($state, callable $set) {
+                                    if ($state !== 'custom') {
+                                        $set('start_date', null);
+                                        $set('end_date', null);
+                                    }
+                                }),
+
+                            DatePicker::make('start_date')
+                                ->label('Fecha de Inicio')
+                                ->visible(fn (callable $get) => $get('report_type') === 'custom')
+                                ->required(fn (callable $get) => $get('report_type') === 'custom'),
+
+                            DatePicker::make('end_date')
+                                ->label('Fecha de Fin')
+                                ->visible(fn (callable $get) => $get('report_type') === 'custom')
+                                ->required(fn (callable $get) => $get('report_type') === 'custom')
+                                ->after('start_date'),
+                        ])
+                        ->action(function (array $data, CashRegister $record) {
+                            // Validar fechas para rangos personalizados
+                            if ($data['report_type'] === 'custom' && (!$data['start_date'] || !$data['end_date'])) {
+                                Notification::make()
+                                    ->title('Error')
+                                    ->body('Las fechas son requeridas para rangos personalizados')
+                                    ->danger()
+                                    ->send();
+                                return;
+                            }
+
+                            // Obtener los detalles de corte según el tipo de reporte y caja específica
+                            $query = \App\Models\CashRegisterDetail::query()
+                                ->where('cash_register_id', $record->id);
+                            
+                            switch ($data['report_type']) {
+                                case 'daily':
+                                    $query->whereDate('start_date', Carbon::today());
+                                    break;
+                                case 'weekly':
+                                    $query->whereBetween('start_date', [
+                                        Carbon::now()->startOfWeek(),
+                                        Carbon::now()->endOfWeek()
+                                    ]);
+                                    break;
+                                case 'monthly':
+                                    $query->whereMonth('start_date', Carbon::now()->month)
+                                          ->whereYear('start_date', Carbon::now()->year);
+                                    break;
+                                case 'custom':
+                                    $query->whereBetween('start_date', [
+                                        Carbon::parse($data['start_date'])->startOfDay(),
+                                        Carbon::parse($data['end_date'])->endOfDay()
+                                    ]);
+                                    break;
+                            }
+
+                            $records = $query->with(['cashRegister', 'cashRegister.location', 'cashRegister.user'])->get();
+                            
+                            if ($records->isEmpty()) {
+                                Notification::make()
+                                    ->title('Sin datos')
+                                    ->body('No hay cortes de caja para el período seleccionado')
+                                    ->warning()
+                                    ->send();
+                                return;
+                            }
+
+                            $countDetails = $records->count();
+                            $sumAmount = $records->sum('counted_amount');
+                            $minDate = $records->min('start_date');
+                            $maxDate = $records->max('end_date');
+                            $horaLocal = Carbon::now('America/Mexico_City')->format('d/m/Y H:i');
+
+                            return response()->streamDownload(function () use ($records, $countDetails, $sumAmount, $horaLocal, $minDate, $maxDate, $record) {
+                                echo Pdf::loadHtml(
+                                    Blade::render('pdf-cash-register-detail', [
+                                        'records' => $records, 
+                                        'total' => $sumAmount,
+                                        'cantidad' => $countDetails,
+                                        'fecha' => $horaLocal,
+                                        'minDate' => $minDate,
+                                        'maxDate' => $maxDate,
+                                        'cashRegister' => $record
+                                    ])
+                                )->stream();
+                            }, 'Reporte de corte de caja ' . $record->name . '-' . now()->format('Y-m-d_H-i-s') . '.pdf');
+                        }),
                 ])
                 ->button()
                 ->label('Acciones')
             ])
+            
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),

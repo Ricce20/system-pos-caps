@@ -13,11 +13,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
-
-use Picqer\Barcode\Renderers\PngRenderer;
 use Illuminate\Support\Facades\Storage;
 use Picqer\Barcode\BarcodeGeneratorPNG;
 
@@ -52,29 +48,7 @@ class ItemRelationManager extends RelationManager
                     ->afterStateUpdated(fn (Set $set, ?string $state) => $set('code', strtoupper($state)))
                     ->live(onBlur:true)
                     ->hint('8-14 caracteres, solo letras mayúsculas, números y guiones'),
-                
-                // Forms\Components\TextInput::make('price')
-                //     ->label('Precio')
-                //     ->prefix('$')
-                //     ->required()
-                //     ->numeric()
-                //     ->minValue(function (callable $get) {
-                //         // Obtener el precio máximo de compra entre todos los proveedores
-                //         $maxPurchasePrice = DB::table('supplier_items')
-                //             ->where('item_id', $get('id'))
-                //             ->max('purchase_price');
-                        
-                //         return $maxPurchasePrice ?? 0;
-                //     })
-                //     ->helperText(function (callable $get) {
-                //         $maxPurchasePrice = DB::table('supplier_items')
-                //             ->where('item_id', $get('id'))
-                //             ->max('purchase_price');
-                        
-                //         return $maxPurchasePrice 
-                //             ? "El precio no puede ser menor al precio de compra: $".number_format($maxPurchasePrice, 2)
-                //             : "Primero asigna proveedores y precios de compra";
-                //     }),
+            
                 Forms\Components\Toggle::make('is_available')
                     ->label('Disponible')
                     ->onColor('success')
@@ -89,7 +63,7 @@ class ItemRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            ->heading('Producto por Tallas')
+            ->heading('Producto por tallas')
             ->recordTitleAttribute('product_id')
             ->columns([
                 Tables\Columns\TextColumn::make('size.name')
@@ -108,7 +82,7 @@ class ItemRelationManager extends RelationManager
                 Tables\Columns\ImageColumn::make('barcode')
                     ->disk('public')
                     ->visibility('public')
-                    ->label('Codigo de Barra'),
+                    ->label('Código de barras'),
 
                 Tables\Columns\ToggleColumn::make('is_available')
                     ->label('Disponible')

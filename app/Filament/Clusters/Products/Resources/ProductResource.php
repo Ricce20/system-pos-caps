@@ -5,7 +5,6 @@ namespace App\Filament\Clusters\Products\Resources;
 use App\Filament\Clusters\Products;
 use App\Filament\Clusters\Products\Resources\ProductResource\Pages;
 use App\Filament\Clusters\Products\Resources\ProductResource\RelationManagers;
-use App\Filament\Clusters\Products\Resources\ProductResource\RelationManagers\ItemRelationManager;
 use App\Models\Product;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -13,13 +12,15 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\Layout\Panel;
 use Filament\Tables\Columns\Layout\Stack;
-use Filament\Tables\Columns\Summarizers\Average;
 use Filament\Tables\Columns\Summarizers\Count;
-use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Table;
+use Filament\Forms\Components\Select;
+use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Blade;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ProductResource extends Resource
 {
@@ -46,13 +47,13 @@ class ProductResource extends Resource
 
                 Forms\Components\TextInput::make('description')
                     ->label('Descripción')
-                    ->placeholder('Ingrese una descripción (opcional)')
+                    ->placeholder('Ingrese una descripción (opcional).')
                     ->maxLength(255)
                     ->default(null),
 
                 Forms\Components\Select::make('brand_id')
                     ->label('Marca')
-                    ->placeholder('Seleccione una marca')
+                    ->placeholder('Seleccione una marca.')
                     ->relationship('brand', 'name', function ($query) {
                         return $query->where('is_available', true)->whereNull('deleted_at');
                     })
@@ -65,7 +66,7 @@ class ProductResource extends Resource
 
                 Forms\Components\Select::make('model_cap_id')
                     ->label('Modelo')
-                    ->placeholder('Seleccione un modelo')
+                    ->placeholder('Seleccione un modelo.')
                     ->relationship('modelCap', 'name', function ($query) {
                         return $query->where('is_available', true)->whereNull('deleted_at');
                     })
@@ -78,7 +79,7 @@ class ProductResource extends Resource
 
                 Forms\Components\Select::make('category_id')
                     ->label('Categoría')
-                    ->placeholder('Seleccione una categoría')
+                    ->placeholder('Seleccione una categoría.')
                     ->relationship('category', 'name', function ($query) {
                         return $query->where('is_available', true)->whereNull('deleted_at');
                     })
@@ -91,7 +92,7 @@ class ProductResource extends Resource
 
                 Forms\Components\Toggle::make('is_available')
                     ->label('Disponible')
-                    ->helperText('Seleccione si el producto está disponible')
+                    ->helperText('Seleccione si el producto está disponible.')
                     ->onColor('success')
                     ->offColor('danger')
                     ->onIcon('heroicon-m-check-circle')
@@ -150,7 +151,7 @@ class ProductResource extends Resource
                             ->sortable()
                             ->summarize([
                                 Count::make()
-                                ->prefix('Total de Productos: ')
+                                ->prefix('Total de productos: ')
                             ])
                             // ->onColor('success')
                             // ->offColor('danger')
@@ -206,6 +207,93 @@ class ProductResource extends Resource
                             $record->update(['is_available' => true]);
                         })
                 // ])->button()->label('Acciones')
+            ])
+            ->headerActions([
+                // ExportAction::make()
+                // ->exporter(ProductExporter::class)
+                // ->formats([ExportFormat::Xlsx])
+                // ->fileDisk('public')
+                // ->fileName(fn (Export $export): string => "products-{$export->getKey()}"),
+                
+                Tables\Actions\Action::make('generate_pdf_report')
+                    ->label('Imprimir productos (PDF).')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->form([
+                        Select::make('availability_filter')
+                            ->label('Filtrar por Disponibilidad')
+                            ->options([
+                                'all' => 'Todos los Productos',
+                                'available' => 'Solo Disponibles',
+                                'unavailable' => 'Solo No Disponibles',
+                            ])
+                            ->default('all')
+                            ->required(),
+                    ])
+                    ->action(function (array $data) {
+                        // Obtener los productos según el filtro de disponibilidad
+                        $query = \App\Models\Product::query()
+                            ->with(['brand', 'category', 'modelCap', 'item.warehouseItem']);
+                        
+                        // Aplicar filtro de disponibilidad
+                        switch ($data['availability_filter']) {
+                            case 'available':
+                                $query->where('is_available', true);
+                                break;
+                            case 'unavailable':
+                                $query->where('is_available', false);
+                                break;
+                            case 'all':
+                            default:
+                                // No aplicar filtro, mostrar todos
+                                break;
+                        }
+
+                        $records = $query->get();
+                        
+                        if ($records->isEmpty()) {
+                            Notification::make()
+                                ->title('Sin datos')
+                                ->body('No hay productos para el filtro seleccionado')
+                                ->warning()
+                                ->send();
+                            return;
+                        }
+
+                        $countProducts = $records->count();
+                        $countAvailable = $records->where('is_available', true)->count();
+                        $countUnavailable = $records->where('is_available', false)->count();
+                        $totalItems = $records->sum(function ($product) {
+                            return $product->item->count();
+                        });
+                        $horaLocal = Carbon::now('America/Mexico_City')->format('d/m/Y H:i');
+
+                        // Obtener información del filtro para el nombre del archivo
+                        $filterName = 'Todos';
+                        switch ($data['availability_filter']) {
+                            case 'available':
+                                $filterName = 'Disponibles';
+                                break;
+                            case 'unavailable':
+                                $filterName = 'No Disponibles';
+                                break;
+                        }
+
+                        return response()->streamDownload(function () use ($records, $countProducts, $countAvailable, $countUnavailable, $totalItems, $horaLocal, $filterName) {
+                            echo Pdf::loadHtml(
+                                Blade::render('pdf-products', [
+                                    'records' => $records, 
+                                    'countProducts' => $countProducts,
+                                    'countAvailable' => $countAvailable,
+                                    'countUnavailable' => $countUnavailable,
+                                    'totalItems' => $totalItems,
+                                    'fecha' => $horaLocal,
+                                    'filterName' => $filterName
+                                ])
+                            )->stream();
+                        }, 'Reporte de productos ' . $filterName . '-' . now()->format('Y-m-d_H-i-s') . '.pdf');
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

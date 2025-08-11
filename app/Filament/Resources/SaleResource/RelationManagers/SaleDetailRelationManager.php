@@ -2,61 +2,52 @@
 
 namespace App\Filament\Resources\SaleResource\RelationManagers;
 
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class SaleDetailRelationManager extends RelationManager
 {
-    protected static string $relationship = 'SaleDetail';
+    // 👈 Debe coincidir con el método del modelo Sale: saleDetails()
+    protected static string $relationship = 'saleDetails';
 
+    protected static ?string $title = 'Detalles de la venta';
+
+    // Lo dejamos vacío: relación de solo lectura
     public function form(Form $form): Form
     {
-        return $form
-            ->schema([
-                Forms\Components\TextInput::make('item_id')
-                    ->required()
-                    ->maxLength(255),
-                
-            ]);
+        return $form->schema([]);
     }
 
     public function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('item_id')
             ->columns([
+                Tables\Columns\TextColumn::make('item.code')
+                    ->label('Código')
+                    ->searchable(),
+
                 Tables\Columns\TextColumn::make('item.product.name')
-                    ->label('Producto'),
+                    ->label('Producto')
+                    ->searchable(),
+
                 Tables\Columns\TextColumn::make('item.size.name')
-                    ->label('Talla'),
+                    ->label('Talla')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('quantity')
                     ->label('Cantidad')
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('subtotal')
                     ->label('Subtotal')
-                    ->prefix('$')
-                    ->suffix('MXN')
+                    ->money('mxn')      // formatea como moneda
                     ->sortable(),
             ])
-            ->filters([
-                //
-            ])
-            ->headerActions([
-                Tables\Actions\CreateAction::make(),
-            ])
-            ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ]);
+            // Sin crear/editar/borrar desde aquí (solo lectura)
+            ->headerActions([])
+            ->actions([])
+            ->bulkActions([]);
     }
 }

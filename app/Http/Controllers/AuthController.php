@@ -21,36 +21,35 @@ class AuthController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
         ]);
-
-        $user = User::create([
+    
+        $user = \App\Models\User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => bcrypt($request->password),
             'role' => 'empleado',
             'active' => true,
         ]);
-
-        // dd($user);
-
-
-        $token = auth('api')->attempt($user);
-
+    
+        // Genera token para el usuario recién creado (esto sí es correcto con JWT)
+        $token = \Tymon\JWTAuth\Facades\JWTAuth::fromUser($user);
+    
         return response()->json([
-            'message' => 'Usuario registrado exitosamente',
-            'user' => $user,
-            'token' => $token,
-            'token_type' => 'bearer',
-            'expires_in' => JWTAuth::factory()->getTTL() * 60
+            'message'     => 'Usuario registrado exitosamente',
+            'user'        => $user,
+            'access_token'=> $token,
+            'token_type'  => 'bearer',
+            'expires_in'  => \Tymon\JWTAuth\Facades\JWTAuth::factory()->getTTL() * 60,
         ], 201);
     }
+    
     /**
      * Get a JWT via given credentials.
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function login()
+    public function login(Request $request) // <-- CAMBIO 1
     {
-        $credentials = request(['email', 'password']);
+        $credentials = $request->only('email', 'password'); // <-- CAMBIO 2
 
         if (! $token = auth('api')->attempt($credentials)) {
             return response()->json(['error' => 'Unauthorized'], 401);

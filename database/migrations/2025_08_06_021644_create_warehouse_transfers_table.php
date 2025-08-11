@@ -18,7 +18,7 @@ return new class extends Migration
             $table->unsignedBigInteger('destination_warehouse_id')->comment('Almacén destino');
             // $table->unsignedBigInteger('item_id')->comment('Producto a transferir');
             // $table->integer('quantity')->comment('Cantidad a transferir');
-            $table->enum('status', ['pending', 'completed', 'cancelled'])->default('pending')->comment('Estado de la transferencia');
+            $table->enum('status', ['pendiente', 'completado', 'cancelado'])->default('pending')->comment('Estado de la transferencia');
             $table->text('notes')->nullable()->comment('Notas adicionales');
             $table->unsignedBigInteger('created_by')->comment('Usuario que creó la transferencia');
             $table->unsignedBigInteger('approved_by')->nullable()->comment('Usuario que aprobó la transferencia');

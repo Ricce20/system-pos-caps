@@ -13,12 +13,11 @@ class SizeSeeder extends Seeder
     public function run(): void
     {
         $sizes = [
-            ['name' => 'XS', 'measurement' => '16cm'],
-            ['name' => 'S',  'measurement' => '18cm'],
-            ['name' => 'M',  'measurement' => '20cm'],
-            ['name' => 'L',  'measurement' => '22cm'],
-            ['name' => 'XL', 'measurement' => '24cm'],
-            ['name' => 'XXL','measurement' => '26cm'],
+            ['name' => 'S',  'measurement' => '54cm'],
+            ['name' => 'M',  'measurement' => '57cm'],
+            ['name' => 'L',  'measurement' => '59cm'],
+            ['name' => 'XL', 'measurement' => '62cm'],
+            ['name' => 'Uni','measurement' => 'Unitalla'],
         ];
 
         foreach ($sizes as $size) {

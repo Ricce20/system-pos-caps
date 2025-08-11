@@ -207,7 +207,7 @@ class ScanerComponent extends Component implements HasForms, HasActions
 
         $product = $this->cart->get($indexProduct);
         // dd($product);
-        if(!$this->hasStock($product['id'],$product['quantity'])){
+        if(!$this->hasStock($product['id'],$product['quantity'] + 1)){
             Notification::make()
                     ->title('Stock insuficiente')
                     ->info()
@@ -232,7 +232,12 @@ class ScanerComponent extends Component implements HasForms, HasActions
         $product = $this->cart->get($indexProduct);
        
 
-        $product['quantity'] -= 1;
+        if($product['quantity'] > 1){
+            $product['quantity'] -= 1;
+        }else{
+            $this->deleteProductById($id);
+            return;
+        }
 
         $this->total -= $product['price'];
         $this->cart->put($indexProduct,$product);

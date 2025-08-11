@@ -44,10 +44,10 @@ class WarehouseTransfer extends Model
     /**
      * Estados disponibles para las transferencias
      */
-    const STATUS_PENDING = 'pending';
+    const STATUS_PENDING = 'pendiente';
     const STATUS_IN_TRANSIT = 'in_transit';
-    const STATUS_COMPLETED = 'completed';
-    const STATUS_CANCELLED = 'cancelled';
+    const STATUS_COMPLETED = 'completado';
+    const STATUS_CANCELLED = 'cancelado';
 
     /**
      * Boot del modelo

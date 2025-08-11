@@ -136,7 +136,7 @@ class WarehouseItemRelationManager extends RelationManager
                 Tables\Actions\CreateAction::make()
                     ->label('Agregar producto'),
                 Tables\Actions\Action::make('print_pdf')
-                    ->label('Imprimir Inventrio PDF')
+                    ->label('Imprimir Inventario PDF')
                     ->icon('heroicon-o-printer')
                     ->color('success')
                     ->form([

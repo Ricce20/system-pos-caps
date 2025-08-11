@@ -153,8 +153,6 @@ class WarehouseResource extends Resource
     {
         return [
             RelationManagers\WarehouseItemRelationManager::class,
-            // RelationManagers\TransfersAsSourceRelationManager::class,
-            // RelationManagers\TransfersAsDestinationRelationManager::class,
         ];
     }
 

@@ -4,6 +4,7 @@ namespace App\Filament\Resources\UsersEmployeeResource\Pages;
 
 use App\Filament\Resources\UsersEmployeeResource;
 use App\Models\User;
+use App\Models\UsersEmployee;
 use Carbon\Carbon;
 use Filament\Actions;
 use Filament\Notifications\Notification;
@@ -25,10 +26,11 @@ class CreateUsersEmployee extends CreateRecord
         // dd($userId);
         if ($userId) {
             $user = User::find($userId);
-            if ($user && !$user->is_available) {
+            $exists = UsersEmployee::where('user_id',$userId)->where('active',true)->first();
+            if ($user && !$user->is_available && $exists) {
                 Notification::make()
                 ->warning()
-                ->title('Usuario ya asignado a otro empleado')
+                ->title('Usuario ya asignado a un empleado')
                 ->body('Consulte sus registros')
                 ->persistent()
                 ->send();

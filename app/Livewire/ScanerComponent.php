@@ -6,6 +6,7 @@ use App\Models\Item;
 use App\Models\Sale;
 use App\Models\SaleDetail;
 use App\Models\SupplierItem;
+use App\Models\Warehouse;
 use App\Models\WarehouseItem;
 use Carbon\Carbon;
 use Filament\Actions\Action;
@@ -112,6 +113,16 @@ class ScanerComponent extends Component implements HasForms, HasActions
             $product->quantity = 1;
 
             $exists = $this->verifyProductInCollectionProducts($product);
+
+            if(!$this->availableWarehouse()){
+                Notification::make()
+                ->title('Almacen inactivo')
+                ->info()
+                ->body('El almacen no se encuentra activo para realizar ventas')
+                ->send();
+                $this->form->fill();
+                return;
+            }
 
             if (!$exists) {
                 if (!$this->hasStock($product->id,$product->quantity)) {
@@ -304,7 +315,7 @@ class ScanerComponent extends Component implements HasForms, HasActions
                     'method_of_payment' => $this->method,
                     'is_check' => false,
                     'user_id'=> auth()->user()->id,
-                    'employee_id' => auth()->user()->employee()->id ?? 'Administrador'
+                    'employee_id' => auth()->user()->employee()->id ?? null
                 ];
                 //   dd($SaleData);
                 $sale = Sale::create($SaleData);
@@ -365,10 +376,16 @@ class ScanerComponent extends Component implements HasForms, HasActions
             ->exists();
     }
 
+    private function availableWarehouse():bool{
+        return Warehouse::where('id',$this->warehouseId)
+            ->where('active',true)->exists();
+    }
+
     private function getPrimaryPrice(Item $product): float
     {
         return (float) SupplierItem::where('item_id', $product->id)
             ->where('is_primary', true)
+            ->where('is_available',true)
             ->value('sale_price') ?? 0;
     }
 

@@ -52,4 +52,26 @@ class Product extends Model
     {
         return $this->hasMany(Item::class);
     }
+
+    //ELIMINACION 
+    protected static function booted(){
+        //ITEM MODEL DELETED
+        static::deleting(function (Product $parent) {
+            $parent->item()->chunk(20, function ($items) {
+                foreach ($items as $item) {
+                    $item->updateQuietly(['is_available' => false]);
+                    $item->delete(); // Soft delete
+                }
+            });
+        });
+
+        static::restoring(function (Product $parent) {
+            $parent->item()->withTrashed()->chunk(20, function ($items) {
+                foreach ($items as $item) {
+                    $item->restore();
+                    $item->updateQuietly(['is_available' => true]);
+                }
+            });
+        });
+    }
 }

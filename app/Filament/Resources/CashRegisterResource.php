@@ -129,17 +129,18 @@ class CashRegisterResource extends Resource
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make(),
-                    Tables\Actions\DeleteAction::make()
-                        ->before(function (CashRegister $record) {
-                            // dd($record);
-                            $record->update(['is_available' => false]);
-                        }),
-                    Tables\Actions\RestoreAction::make()
-                        ->after(function (CashRegister $record) {
-                            $record->update(['is_available' => true]);
-                        }),
+                    // Tables\Actions\DeleteAction::make()
+                    //     ->before(function (CashRegister $record) {
+                    //         // dd($record);
+                    //         $record->update(['is_available' => false]);
+                    //     }),
+                    // Tables\Actions\RestoreAction::make()
+                    //     ->after(function (CashRegister $record) {
+                    //         $record->update(['is_available' => true]);
+                    //     }),
                     Tables\Actions\Action::make('Ir a caja')
                         ->visible(fn (Model $record): bool => auth()->user()->id === $record->user_id)
+                        ->hidden(fn(Model $record)=> !$record->location->active || !$record->is_available)
                         ->label('Ir a caja')
                         ->icon('heroicon-o-currency-dollar')
                         ->color('success')
@@ -253,9 +254,9 @@ class CashRegisterResource extends Resource
             
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
+                    // Tables\Actions\DeleteBulkAction::make(),
+                    // Tables\Actions\ForceDeleteBulkAction::make(),
+                    // Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ])
             ->modifyQueryUsing(fn (Builder $query) => 

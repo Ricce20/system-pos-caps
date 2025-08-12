@@ -84,12 +84,9 @@ class WarehouseResource extends Resource
                 Tables\Columns\TextColumn::make('location')
                     ->label('Ubicación')
                     ->searchable(),
-                Tables\Columns\ToggleColumn::make('active')
+                Tables\Columns\IconColumn::make('active')
                     ->label('Activo')
-                    ->onColor('success')
-                    ->offColor('danger')
-                    ->onIcon('heroicon-m-check-circle')
-                    ->offIcon('heroicon-m-x-circle'),
+                    ->boolean(),
                 Tables\Columns\IconColumn::make('is_primary')
                     ->label('Almacén pricipal')
                     ->boolean(),
@@ -123,24 +120,24 @@ class WarehouseResource extends Resource
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make(),
-                    Tables\Actions\DeleteAction::make()
-                        ->before(function (Warehouse $record) {
-                            // dd($record);
-                            $record->update(['active' => false,'is_primary' => false]);
-                        }),
-                    Tables\Actions\RestoreAction::make()
-                        ->after(function (Warehouse $record) {
-                            $record->update(['active' => true]);
-                        })
+                    // Tables\Actions\DeleteAction::make()
+                    //     ->before(function (Warehouse $record) {
+                    //         // dd($record);
+                    //         $record->update(['active' => false,'is_primary' => false]);
+                    //     }),
+                    // Tables\Actions\RestoreAction::make()
+                    //     ->after(function (Warehouse $record) {
+                    //         $record->update(['active' => true]);
+                    //     })
                 ])
                 ->button()
                 ->label('Acciones')
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
+                    // Tables\Actions\DeleteBulkAction::make(),
+                    // Tables\Actions\ForceDeleteBulkAction::make(),
+                    // Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ])
             ->modifyQueryUsing(fn (Builder $query) => 

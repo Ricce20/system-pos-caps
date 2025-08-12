@@ -109,12 +109,9 @@ class SupplierResource extends Resource
                     ->label('Marca')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\ToggleColumn::make('is_available')
+                Tables\Columns\IconColumn::make('is_available')
                     ->label('Disponible')
-                    ->onColor('success')
-                    ->offColor('danger')
-                    ->onIcon('heroicon-m-check-circle')
-                    ->offIcon('heroicon-m-x-circle'),
+                    ->boolean(),
                 Tables\Columns\TextColumn::make('deleted_at')
                     ->label('Eliminado el')
                     ->dateTime()
@@ -190,24 +187,24 @@ class SupplierResource extends Resource
                         ->modalDescription('Se generará un reporte PDF con la información del proveedor y sus artículos asociados.')
                         ->modalSubmitActionLabel('Generar PDF')
                         ->modalCancelActionLabel('Cancelar'),
-                    Tables\Actions\DeleteAction::make()
-                        ->before(function (Supplier $record) {
-                            // dd($record);
-                            $record->update(['is_available' => false]);
-                        }),
-                    Tables\Actions\RestoreAction::make()
-                        ->after(function (Supplier $record) {
-                            $record->update(['is_available' => true]);
-                        })
+                    // Tables\Actions\DeleteAction::make()
+                    //     ->before(function (Supplier $record) {
+                    //         // dd($record);
+                    //         $record->update(['is_available' => false]);
+                    //     }),
+                    // Tables\Actions\RestoreAction::make()
+                    //     ->after(function (Supplier $record) {
+                    //         $record->update(['is_available' => true]);
+                    //     })
                 ])
                 ->button()
                 ->label('Acciones')
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
+                    // Tables\Actions\DeleteBulkAction::make(),
+                    // Tables\Actions\ForceDeleteBulkAction::make(),
+                    // Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ])
             ->modifyQueryUsing(fn (Builder $query) => 

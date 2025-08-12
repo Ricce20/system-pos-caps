@@ -14,9 +14,22 @@ class EditSupplier extends EditRecord
     {
         return [
             Actions\ViewAction::make(),
-            Actions\DeleteAction::make(),
-            Actions\ForceDeleteAction::make(),
-            Actions\RestoreAction::make(),
+            // Actions\DeleteAction::make(),
+            // Actions\ForceDeleteAction::make(),
+            // Actions\RestoreAction::make(),
         ];
+    }
+
+    protected function afterSave(): void
+    {
+        $record = $this->getRecord();
+        if(!$record->is_available){
+            $record->supplierItems()->update(['is_available' => false]);
+            return;
+        }else{
+            $record->supplierItems()->update(['is_available' => true]);
+            return;
+        }
+        return;
     }
 }

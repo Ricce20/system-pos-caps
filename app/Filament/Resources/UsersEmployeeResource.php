@@ -83,7 +83,7 @@ class UsersEmployeeResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('user.name')
+                Tables\Columns\TextColumn::make('user.name',fn($query)=> $query->where('is_available',true))
                     ->label('Usuario')
                     ->searchable()
                     ->sortable(),
@@ -91,9 +91,9 @@ class UsersEmployeeResource extends Resource
                     ->label('Empleado')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\IconColumn::make('online')
-                    ->label('En línea')
-                    ->boolean(),
+                // Tables\Columns\IconColumn::make('online')
+                //     ->label('En línea')
+                //     ->boolean(),
                 Tables\Columns\ToggleColumn::make('active')
                     ->disabled(fn(Model $record) => $record->end_date != null)
                     ->label('Activo')

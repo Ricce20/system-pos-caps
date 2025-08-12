@@ -124,24 +124,24 @@ class EmployeeResource extends Resource
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make(),
-                    Tables\Actions\DeleteAction::make()
-                        ->before(function (Employee $record) {
-                            // dd($record);
-                            $record->update(['is_available' => false]);
-                        }),
-                    Tables\Actions\RestoreAction::make()
-                        ->after(function (Employee $record) {
-                            $record->update(['is_available' => true]);
-                        })
+                    // Tables\Actions\DeleteAction::make()
+                    //     ->before(function (Employee $record) {
+                    //         // dd($record);
+                    //         $record->update(['is_available' => false]);
+                    //     }),
+                    // Tables\Actions\RestoreAction::make()
+                    //     ->after(function (Employee $record) {
+                    //         $record->update(['is_available' => true]);
+                    //     })
                 ])
                 ->button()
                 ->label('Acciones')
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
+                    // Tables\Actions\DeleteBulkAction::make(),
+                    // Tables\Actions\ForceDeleteBulkAction::make(),
+                    // Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ]);
     }

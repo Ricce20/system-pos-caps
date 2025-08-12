@@ -225,7 +225,7 @@
                     <td>
                         @if($warehouseItem->item->barcode)
                             @php
-                                $barcodePath = public_path('storage/' . $warehouseItem->item->barcode);
+                                $barcodePath = public_path('uploads/' . $warehouseItem->item->barcode);
                                 $barcodeBase64 = '';
                                 if (file_exists($barcodePath)) {
                                     $barcodeBase64 = base64_encode(file_get_contents($barcodePath));
@@ -242,6 +242,7 @@
                             <span class="barcode-fallback">N/A</span>
                         @endif
                     </td>
+                    
                     <td class="{{ $warehouseItem->stock <= 10 ? 'stock-critical' : ($warehouseItem->stock <= 40 ? 'stock-low' : 'stock-normal') }}">
                         {{ $warehouseItem->stock }}
                     </td>

@@ -16,7 +16,7 @@ class CreateWarehouseTransfer extends CreateRecord
     public function mutateFormDataBeforeCreate(array $data): array
     {
         $data['created_by'] = auth()->user()->id;
-        $data['status'] = 'pending';
+        $data['status'] = 'pendiente';
         $data['approved_at'] = Carbon::now();
         return $data;
     }

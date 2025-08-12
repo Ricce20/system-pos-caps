@@ -127,24 +127,24 @@ class LocationResource extends Resource
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make(),
-                    Tables\Actions\DeleteAction::make()
-                        ->before(function (Location $record) {
-                            // dd($record);
-                            $record->update(['active' => false]);
-                        }),
-                    Tables\Actions\RestoreAction::make()
-                        ->after(function (Location $record) {
-                            $record->update(['active' => true]);
-                        })
+                    // Tables\Actions\DeleteAction::make()
+                    //     ->before(function (Location $record) {
+                    //         // dd($record);
+                    //         $record->update(['active' => false]);
+                    //     }),
+                    // Tables\Actions\RestoreAction::make()
+                    //     ->after(function (Location $record) {
+                    //         $record->update(['active' => true]);
+                    //     })
                 ])
                 ->button()
                 ->label('Acciones')
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
+                    // Tables\Actions\DeleteBulkAction::make(),
+                    // Tables\Actions\ForceDeleteBulkAction::make(),
+                    // Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ])
             ->modifyQueryUsing(fn (Builder $query) => 

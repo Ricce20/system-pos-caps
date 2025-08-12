@@ -217,15 +217,15 @@
                          <td>{{ $item->id }}</td>
                          <td>{{ $item->code ?? 'N/A' }}</td>
                          <td>
-                             @if($item->barcode)
-                                 <img src="data:image/png;base64,{{ base64_encode(file_get_contents(public_path('storage/' . $item->barcode))) }}" 
-                                      alt="Código de Barra" 
-                                      class="barcode-image"
-                                      onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-                                 <span class="barcode-fallback" style="display: none;">{{ $item->barcode }}</span>
-                             @else
-                                 <span class="barcode-fallback">N/A</span>
-                             @endif
+                            @if($item->barcode)
+                                <img src="data:image/png;base64,{{ base64_encode(file_get_contents(public_path('uploads/' . $item->barcode))) }}" 
+                                    alt="Código de Barra" 
+                                    class="barcode-image"
+                                    onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                                <span class="barcode-fallback" style="display: none;">{{ $item->barcode }}</span>
+                            @else
+                                <span class="barcode-fallback">N/A</span>
+                            @endif
                          </td>
                          <td>
                             ${{ number_format($item->supplierItem->where('is_primary',true)->value('sale_price') ?? 0, 2) }}</td>

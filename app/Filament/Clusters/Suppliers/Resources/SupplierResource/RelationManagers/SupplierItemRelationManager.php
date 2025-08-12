@@ -36,7 +36,7 @@ class SupplierItemRelationManager extends RelationManager
             Forms\Components\Select::make('item_id')
                 ->label('Producto')
                 ->required()
-                ->relationship('item', 'id')
+                ->relationship('item', 'id', fn(Builder $query)=> $query->where('is_available',true)->WhereNull('deleted_at'))
                 ->getOptionLabelFromRecordUsing(fn ($record) => 
                     $record->product->name . ' - ' . $record->size->name
                 )
@@ -145,6 +145,9 @@ class SupplierItemRelationManager extends RelationManager
                     ->label('Disponible')
                     ->boolean()
                     ->sortable(),
+                Tables\Columns\IconColumn::make('item.is_available')
+                    ->label('Producto Disponible')
+                    ->boolean(),              
                 Tables\Columns\IconColumn::make('is_primary')
                     ->label('Proovedor principal')
                     ->boolean()
@@ -160,6 +163,7 @@ class SupplierItemRelationManager extends RelationManager
                         false => 'No Disponibles'
                     ])->attribute('is_available')
                     ->native(false)
+                    ->default(true)
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make('create')
@@ -188,6 +192,7 @@ class SupplierItemRelationManager extends RelationManager
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make()
+                        ->hidden(fn(Model $record) => !$record->item->is_available)
                         ->before(function (array $data) {
                             $previous = SupplierItem::where('item_id', $data['item_id'])
                                 ->where('supplier_id','!=', $this->getOwnerRecord()->id)
@@ -207,15 +212,15 @@ class SupplierItemRelationManager extends RelationManager
 
                             // Si no había previous, Filament seguirá y guardará normalmente:
                         }),
-                    Tables\Actions\DeleteAction::make()
-                        ->before(function (SupplierItem $record) {
-                            // dd($record);
-                            $record->update(['is_available' => false,'is_primary' => false]);
-                        }),
-                    Tables\Actions\RestoreAction::make()
-                        ->after(function (SupplierItem $record) {
-                            $record->update(['is_available' => true]);
-                        })
+                    // Tables\Actions\DeleteAction::make()
+                    //     ->before(function (SupplierItem $record) {
+                    //         // dd($record);
+                    //         $record->update(['is_available' => false,'is_primary' => false]);
+                    //     }),
+                    // Tables\Actions\RestoreAction::make()
+                    //     ->after(function (SupplierItem $record) {
+                    //         $record->update(['is_available' => true]);
+                    //     })
                 ])
                 ->button()
                 ->label('Acciones')

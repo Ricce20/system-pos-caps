@@ -4,104 +4,112 @@
     <meta charset="utf-8">
     <title>Reporte de Proveedor</title>
     <style>
+        /* Estilos generales y para A4 */
         body {
             font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
+            margin: 20mm auto;
+            padding: 0;
+            max-width: 210mm; /* Ancho A4 */
             color: #333;
+            background: white;
         }
         .header {
             text-align: center;
             border-bottom: 2px solid #2E2626;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
         }
         .header h1 {
             color: #2E2626;
             margin: 0;
-            font-size: 24px;
+            font-size: 22px;
         }
         .header p {
             color: #666;
-            margin: 5px 0;
+            margin: 3px 0;
+            font-size: 12px;
         }
         .supplier-info {
             background: #f8f9fa;
-            padding: 20px;
+            padding: 15px;
             border-radius: 5px;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             border-left: 4px solid #2E2626;
+            font-size: 13px;
         }
         .supplier-info h2 {
             margin-top: 0;
             color: #2E2626;
-            font-size: 18px;
+            font-size: 16px;
+            margin-bottom: 10px;
         }
         .supplier-details {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-top: 15px;
+            gap: 10px;
         }
         .detail-item {
-            padding: 10px;
             background: white;
-            border-radius: 5px;
+            padding: 8px;
+            border-radius: 4px;
             border: 1px solid #ddd;
         }
         .detail-item strong {
             color: #2E2626;
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
+            font-weight: 600;
         }
         .summary {
             background: #f8f9fa;
-            padding: 15px;
+            padding: 12px;
             border-radius: 5px;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
+            font-size: 13px;
         }
         .summary-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
+            gap: 12px;
         }
         .summary-item {
             text-align: center;
-            padding: 10px;
             background: white;
+            padding: 10px;
             border-radius: 5px;
             border: 1px solid #ddd;
         }
         .summary-item h3 {
             margin: 0;
             color: #2E2626;
-            font-size: 14px;
+            font-size: 13px;
         }
         .summary-item p {
-            margin: 5px 0 0 0;
-            font-size: 18px;
+            margin-top: 5px;
+            font-size: 16px;
             font-weight: bold;
             color: #E8D6C7;
         }
         .table-container {
-            margin-top: 30px;
+            margin-top: 15px;
+            font-size: 11px;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 15px;
+            margin-top: 10px;
         }
         th {
             background: #2E2626;
             color: white;
-            padding: 12px 8px;
+            padding: 8px 5px;
             text-align: left;
-            font-size: 12px;
+            font-size: 11px;
         }
         td {
-            padding: 8px;
+            padding: 6px 5px;
             border-bottom: 1px solid #ddd;
-            font-size: 11px;
+            vertical-align: middle;
         }
         .status-available {
             color: #28a745;
@@ -124,17 +132,21 @@
             font-size: 10px;
             color: #666;
             border-top: 1px solid #ddd;
-            padding-top: 15px;
+            padding-top: 10px;
         }
         .barcode-image {
-            max-width: 100px;
-            max-height: 30px;
+            max-width: 90px;
+            max-height: 25px;
             object-fit: contain;
+            display: block;
+            margin: 0 auto;
         }
         .barcode-fallback {
             color: #666;
             font-size: 10px;
             font-style: italic;
+            text-align: center;
+            display: block;
         }
     </style>
 </head>
@@ -178,7 +190,7 @@
     </div>
 
     <div class="summary">
-        <h2 style="margin-top: 0; color: #2E2626;">Resumen de Artículos</h2>
+        <h2>Resumen de Artículos</h2>
         <div class="summary-grid">
             <div class="summary-item">
                 <h3>Total de Artículos</h3>
@@ -196,7 +208,7 @@
     </div>
 
     <div class="table-container">
-        <h2 style="color: #2E2626;">Detalle de Artículos del Proveedor</h2>
+        <h2>Detalle de Artículos del Proveedor</h2>
         
         @if($supplierItems->count() > 0)
         <table>
@@ -229,7 +241,7 @@
                     <td>
                         @if($supplierItem->item->barcode)
                             @php
-                                $barcodePath = public_path('storage/' . $supplierItem->item->barcode);
+                                $barcodePath = public_path('uploads/' . $supplierItem->item->barcode);
                                 $barcodeBase64 = '';
                                 if (file_exists($barcodePath)) {
                                     $barcodeBase64 = base64_encode(file_get_contents($barcodePath));
@@ -278,4 +290,4 @@
         <p>© {{ date('Y') }} Sistema POS - Todos los derechos reservados</p>
     </div>
 </body>
-</html> 
+</html>

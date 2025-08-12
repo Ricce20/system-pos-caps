@@ -37,8 +37,10 @@ class WarehouseTransferResource extends Resource
                 
                     Forms\Components\Select::make('source_warehouse_id')
                         ->label('Almacén Origen')
-                        ->relationship('sourceWarehouse', 'name')
+                        ->relationship('sourceWarehouse', 'name', fn($query) => $query->where('active',true))
                         ->required()
+                        ->preload()
+                        ->searchable()
                         ->native(false)
                         ->live(onBlur: true)
                         ->helperText('Selecciona el almacén de donde saldrá el producto.'),
@@ -46,9 +48,11 @@ class WarehouseTransferResource extends Resource
                         Forms\Components\Select::make('destination_warehouse_id')
                             ->label('Almacén Destino')
                             ->native(false)
-                            ->relationship('destinationWarehouse', 'name')
+                            ->relationship('destinationWarehouse', 'name',fn($query) => $query->where('active',true))
                             ->required()
                             ->reactive()
+                            ->preload()
+                            ->searchable()
                             ->helperText('Selecciona el almacén al que llegará el producto.')
                             ->different('source_warehouse_id')
                             ->disabled(fn (Get $get) => empty($get('source_warehouse_id')))
@@ -335,6 +339,7 @@ class WarehouseTransferResource extends Resource
                                 [
                                     'warehouse_id' => $record->destination_warehouse_id,
                                     'item_id' => $detalle->item_id,
+                                    'is_available' => true,
                                 ],
                                 [
                                     'stock' => 0,
@@ -345,6 +350,11 @@ class WarehouseTransferResource extends Resource
                         }
 
                         $record->save();
+
+                        \Filament\Notifications\Notification::make()
+                        ->title('Transferencia realizada correctamente')
+                        ->success()
+                        ->send();
                     })
                     ->requiresConfirmation()
                     ->modalHeading('Completar transferencia')
@@ -359,6 +369,11 @@ class WarehouseTransferResource extends Resource
                         $record->status = \App\Models\WarehouseTransfer::STATUS_CANCELLED;
                         $record->completed_at = now();
                         $record->save();
+
+                        \Filament\Notifications\Notification::make()
+                        ->title('Transferencia cancelada, sin movimientos.')
+                        ->success()
+                        ->send();
                     })
                     ->requiresConfirmation()
                     ->modalHeading('Cancelar transferencia')

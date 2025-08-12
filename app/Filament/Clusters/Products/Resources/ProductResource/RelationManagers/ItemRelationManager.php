@@ -84,12 +84,10 @@ class ItemRelationManager extends RelationManager
                     ->visibility('public')
                     ->label('Código de barras'),
 
-                Tables\Columns\ToggleColumn::make('is_available')
+                Tables\Columns\IconColumn::make('is_available')
+                    ->disabled(fn()=> !$this->getOwnerRecord()->is_available)
                     ->label('Disponible')
-                    ->onColor('success')
-                    ->offColor('danger')
-                    ->onIcon('heroicon-m-check-circle')
-                    ->offIcon('heroicon-m-x-circle')
+                    ->boolean()
             ])
             ->filters([
                 Tables\Filters\TrashedFilter::make()
@@ -103,6 +101,7 @@ class ItemRelationManager extends RelationManager
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make()
+                ->disabled(fn () => !$this->getOwnerRecord()->is_available)
                 ->label('Registrar nueva Talla')
                 ->using(function (array $data, string $model): Model {
                     // 1️⃣ Generar o tomar el code
@@ -133,6 +132,7 @@ class ItemRelationManager extends RelationManager
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ViewAction::make(),
                     Tables\Actions\EditAction::make()
+                        ->hidden(fn () => !$this->getOwnerRecord()->is_available)
                         ->mutateFormDataUsing(function (array $data,Model $record): array {
                         
                             // Guardar el code anterior
@@ -168,16 +168,27 @@ class ItemRelationManager extends RelationManager
                         
                             return $data;
                         })
-                    ,
-                    Tables\Actions\DeleteAction::make()
-                        ->before(function (Item $record) {
-                            // dd($record);
-                            $record->update(['is_available' => false]);
-                        }),
-                    Tables\Actions\RestoreAction::make()
-                        ->after(function (Item $record) {
-                            $record->update(['is_available' => true]);
+                        ->after(function (Model $record) {
+                            if(!$record->is_available){
+                                $record->supplierItem()->update(['is_available' => false]);
+                                $record->warehouseItem()->update(['is_available' => false]);
+                            }else{
+                                $record->supplierItem()->update(['is_available' => true]);
+                                $record->warehouseItem()->update(['is_available' => true]);
+
+
+                            }
                         })
+                    ,
+                    // Tables\Actions\DeleteAction::make()
+                    //     ->before(function (Item $record) {
+                    //         // dd($record);
+                    //         $record->update(['is_available' => false]);
+                    //     }),
+                    // Tables\Actions\RestoreAction::make()
+                    //     ->after(function (Item $record) {
+                    //         $record->update(['is_available' => true]);
+                    //     })
                 ])
                 ->button()
                 ->label('Acciones')
